@@ -1,92 +1,245 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { Dumbbell, ArrowLeft, Search, Trash2 } from "lucide-react";
+import { useEffect, useState } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
+import { Dumbbell, ArrowLeft, Search, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 
-const mockHistory = [
-  { id: 1, name: "Lat Pulldown Machine", category: "Orqa", date: "2024-03-15", time: "14:30" },
-  { id: 2, name: "Leg Press Machine", category: "Oyoq", date: "2024-03-14", time: "10:15" },
-  { id: 3, name: "Cable Crossover", category: "Ko'krak", date: "2024-03-13", time: "09:00" },
-  { id: 4, name: "Smith Machine", category: "Universal", date: "2024-03-12", time: "16:45" },
-  { id: 5, name: "Seated Row Machine", category: "Orqa", date: "2024-03-11", time: "11:20" },
-  { id: 6, name: "Pec Deck Machine", category: "Ko'krak", date: "2024-03-10", time: "08:30" },
-];
+import { Input } from '@/components/ui/input';
+import { LocaleSwitcher } from '@/components/locale-switcher';
+import { HeaderActionLink } from '@/components/ui/header-action';
+import { IconButton } from '@/components/ui/icon-button';
+import { Link } from '@/i18n/navigation';
+import { deleteAiSession, getAiSessions } from '@/lib/api/ai';
+import { getApiErrorMessage } from '@/lib/api/http';
+
+type HistoryItem = {
+  id: number;
+  name: string;
+  category: string;
+  date: string;
+  time: string;
+  imageUrl: string | null;
+};
+
+function uploadsUrl(pathOrUrl: string | null) {
+  if (!pathOrUrl) return null;
+  if (pathOrUrl.startsWith('http://') || pathOrUrl.startsWith('https://'))
+    return pathOrUrl;
+  const base = process.env.NEXT_PUBLIC_API_URL ?? '';
+  return `${base}${pathOrUrl}`;
+}
 
 export function HistoryPage() {
+  const t = useTranslations('History');
+  const tc = useTranslations('Common');
+  const locale = useLocale();
+  const [items, setItems] = useState<HistoryItem[]>([]);
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+
+  useEffect(() => {
+    const id = setTimeout(() => {
+      setDebouncedSearch(search.trim());
+      setPage(1);
+    }, 350);
+    return () => clearTimeout(id);
+  }, [search]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadHistory() {
+      try {
+        setLoading(true);
+        const response = await getAiSessions({
+          lang: locale,
+          page,
+          limit: 10,
+          q: debouncedSearch || undefined,
+        });
+        if (cancelled) return;
+
+        const nextItems: HistoryItem[] = response.items.map((session) => {
+          const equipmentName =
+            session.title?.trim() || `Session #${session.id}`;
+          const category = session.primaryMuscle?.trim() || 'AI';
+          const d = new Date(session.createdAt);
+          return {
+            id: session.id,
+            name: equipmentName,
+            category,
+            date: d.toLocaleDateString(locale),
+            time: d.toLocaleTimeString(locale, {
+              hour: '2-digit',
+              minute: '2-digit',
+            }),
+            imageUrl: uploadsUrl(session.imageUrl ?? null),
+          };
+        });
+        setItems(nextItems);
+        setTotal(response.meta.total ?? nextItems.length);
+        setTotalPages(response.meta.totalPages ?? 1);
+      } catch (err) {
+        toast.error(getApiErrorMessage(err));
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    loadHistory();
+    return () => {
+      cancelled = true;
+    };
+  }, [debouncedSearch, locale, page]);
+
+  const handleDelete = async (id: number) => {
+    if (deletingId) return;
+    try {
+      setDeletingId(id);
+      await deleteAiSession(id, { lang: locale });
+      setItems((prev) => prev.filter((x) => x.id !== id));
+      setTotal((prev) => Math.max(0, prev - 1));
+    } catch (err) {
+      toast.error(getApiErrorMessage(err));
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   return (
-    <div className="gradient-mesh min-h-screen bg-background">
-      <header className="glass sticky top-0 z-50">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/20">
-              <Dumbbell className="h-4 w-4 text-primary" />
+    <div className='gradient-mesh min-h-screen bg-background'>
+      <header className='glass sticky top-0 z-50 pt-[env(safe-area-inset-top)]'>
+        <div className='container mx-auto flex min-h-14 items-center justify-between gap-2 px-3 sm:min-h-16 sm:px-4'>
+          <Link href='/' className='flex min-w-0 shrink-0 items-center gap-2'>
+            <div className='flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/20'>
+              <Dumbbell className='h-4 w-4 text-primary' />
             </div>
-            <span className="font-display text-lg font-bold text-foreground">
-              Gym<span className="text-primary">AI</span>
+            <span className='font-display truncate text-base font-bold text-foreground sm:text-lg'>
+              Gym<span className='text-primary'>AI</span>
             </span>
           </Link>
-          <Link
-            href="/dashboard"
-            className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Orqaga
-          </Link>
+          <div className='flex min-w-0 items-center justify-end gap-1.5 sm:gap-3'>
+            <LocaleSwitcher className='shrink-0' />
+            <HeaderActionLink
+              href='/dashboard'
+              icon={<ArrowLeft className='h-4 w-4 shrink-0' />}
+              label={tc('back')}
+              className='min-w-0 px-1.5 sm:px-2'
+            />
+          </div>
         </div>
       </header>
 
-      <main className="container mx-auto max-w-3xl px-4 py-8">
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h1 className="font-display text-2xl font-bold text-foreground">Tahlillar tarixi</h1>
-            <span className="text-xs text-muted-foreground">{mockHistory.length} ta tahlil</span>
+      <main className='container mx-auto max-w-3xl px-3 py-6 sm:px-4 sm:py-8'>
+        <div className='space-y-6'>
+          <div className='flex items-center justify-between'>
+            <h1 className='font-display text-2xl font-bold text-foreground'>
+              {t('title')}
+            </h1>
+            <span className='text-xs text-muted-foreground'>
+              {t('count', { count: total })}
+            </span>
           </div>
 
-          <div className="relative">
-            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Qidirish..."
-              className="w-full rounded-xl border border-border bg-secondary py-3 pr-4 pl-10 text-sm text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-primary/30 focus:outline-none"
+          <div className='relative'>
+            <Search className='absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground' />
+            <Input
+              type='text'
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={t('searchPlaceholder')}
+              className='pr-4 pl-10'
             />
           </div>
 
-          <div className="space-y-3">
-            {mockHistory.map((item) => (
-              <Link
-                key={item.id}
-                href="/result"
-                className="group flex items-center gap-4 rounded-xl glass p-4 transition-all hover:border-primary/30"
-              >
-                <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl bg-secondary">
-                  <Dumbbell className="h-6 w-6 text-muted-foreground/30" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h3 className="truncate font-display font-semibold text-foreground transition-colors group-hover:text-primary">
-                    {item.name}
-                  </h3>
-                  <div className="mt-1 flex items-center gap-3">
-                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
-                      {item.category}
-                    </span>
-                    <span className="text-[10px] text-muted-foreground">
-                      {item.date} · {item.time}
-                    </span>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                  }}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground opacity-0 transition-colors hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
+          {loading ? (
+            <div className='glass rounded-xl p-4 text-sm text-muted-foreground'>
+              {t('loading')}
+            </div>
+          ) : items.length === 0 ? (
+            <div className='glass rounded-xl p-4 text-sm text-muted-foreground'>
+              {t('empty')}
+            </div>
+          ) : (
+            <div className='space-y-3'>
+              {items.map((item) => (
+                <Link
+                  key={item.id}
+                  href={`/result?sessionId=${item.id}`}
+                  className='group flex items-center gap-3 rounded-xl glass p-3 transition-all hover:border-primary/30 sm:gap-4 sm:p-4'
                 >
-                  <Trash2 className="h-4 w-4" />
+                  {item.imageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- backend-hosted upload preview
+                    <img
+                      src={item.imageUrl}
+                      alt={item.name}
+                      className='h-12 w-12 shrink-0 rounded-xl object-cover sm:h-14 sm:w-14'
+                    />
+                  ) : (
+                    <div className='flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-secondary sm:h-14 sm:w-14'>
+                      <Dumbbell className='h-5 w-5 text-muted-foreground/30 sm:h-6 sm:w-6' />
+                    </div>
+                  )}
+                  <div className='min-w-0 flex-1'>
+                    <div className='flex items-start justify-between gap-2'>
+                      <h3 className='min-w-0 flex-1 truncate font-display text-sm font-semibold text-foreground transition-colors group-hover:text-primary sm:text-base'>
+                        {item.name}
+                      </h3>
+                      <span className='shrink-0 whitespace-nowrap text-[10px] text-muted-foreground sm:text-xs'>
+                        {item.date} · {item.time}
+                      </span>
+                    </div>
+                    <div className='mt-1 flex min-w-0 items-center gap-2'>
+                      <span className='min-w-0 max-w-full truncate rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary sm:text-[11px]'>
+                        {item.category}
+                      </span>
+                    </div>
+                  </div>
+                  <IconButton
+                    type='button'
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleDelete(item.id);
+                    }}
+                    icon={<Trash2 className='h-4 w-4' />}
+                    variant='ghost'
+                    size='sm'
+                    disabled={deletingId === item.id}
+                    className='rounded-lg opacity-100 hover:bg-destructive/10 hover:text-destructive sm:opacity-0 sm:group-hover:opacity-100'
+                    aria-label={t('delete')}
+                  />
+                </Link>
+              ))}
+              <div className='flex items-center justify-end gap-2 pt-2'>
+                <button
+                  type='button'
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page <= 1 || loading}
+                  className='rounded-lg border border-border px-3 py-1 text-xs text-foreground disabled:cursor-not-allowed disabled:opacity-50'
+                >
+                  Prev
                 </button>
-              </Link>
-            ))}
-          </div>
+                <span className='text-xs text-muted-foreground'>
+                  {page} / {Math.max(1, totalPages)}
+                </span>
+                <button
+                  type='button'
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page >= totalPages || loading}
+                  className='rounded-lg border border-border px-3 py-1 text-xs text-foreground disabled:cursor-not-allowed disabled:opacity-50'
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </main>
     </div>

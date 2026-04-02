@@ -1,25 +1,65 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Dumbbell, Eye, EyeOff, Mail, Lock, User, ArrowRight } from "lucide-react";
+import { toast } from "sonner";
+
+import { LocaleSwitcher } from "@/components/locale-switcher";
+import { Button } from "@/components/ui/button";
+import { IconButton } from "@/components/ui/icon-button";
+import { Input } from "@/components/ui/input";
+import { Link, useRouter } from "@/i18n/navigation";
+import { loginLocal, registerLocal } from "@/lib/api/auth";
+import { getApiErrorMessage } from "@/lib/api/http";
+import { useAuthStore } from "@/stores/auth";
 
 export function AuthPage() {
+  const t = useTranslations("Auth");
+  const router = useRouter();
+  const setAuth = useAuthStore((s) => s.setAuth);
   const searchParams = useSearchParams();
   const mode = searchParams.get("mode");
   const [isSignup, setIsSignup] = useState(mode === "signup");
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({ name: "", email: "", password: "" });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     setIsSignup(mode === "signup");
   }, [mode]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Auth submit:", { isSignup, ...formData });
+    if (isSubmitting) return;
+
+    try {
+      setIsSubmitting(true);
+      const email = formData.email.trim();
+
+      const res = isSignup
+        ? await registerLocal({
+            name: formData.name.trim(),
+            email,
+            password: formData.password,
+          })
+        : await loginLocal({
+            email,
+            password: formData.password,
+          });
+
+      setAuth({ token: res.token, user: res.user });
+      toast.success(res.message || "Success");
+      router.push("/dashboard");
+    } catch (err) {
+      toast.error(getApiErrorMessage(err));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  const bullets = [t("bullet1"), t("bullet2"), t("bullet3")];
 
   return (
     <div className="gradient-mesh flex min-h-screen bg-background">
@@ -41,15 +81,12 @@ export function AuthPage() {
           </Link>
 
           <div className="space-y-4">
-            <h2 className="font-display text-3xl font-bold text-foreground">{`AI bilan gym apparatlarini o'rganing`}</h2>
-            <p className="leading-relaxed text-muted-foreground">
-              Rasm yuklang, AI apparatni aniqlasin — qanday ishlatish, qaysi muskullar uchun foydali — hammasi bir
-              joyda.
-            </p>
+            <h2 className="font-display text-3xl font-bold text-foreground">{t("sideTitle")}</h2>
+            <p className="leading-relaxed text-muted-foreground">{t("sideSubtitle")}</p>
           </div>
 
           <div className="space-y-4">
-            {["500+ gym apparat bazasi", "Tez AI tahlil — 2 soniya", "Muskullar xaritasi"].map((item) => (
+            {bullets.map((item) => (
               <div key={item} className="flex items-center gap-3">
                 <div className="h-1.5 w-1.5 rounded-full bg-primary" />
                 <span className="text-sm text-muted-foreground">{item}</span>
@@ -59,8 +96,11 @@ export function AuthPage() {
         </div>
       </div>
 
-      <div className="flex flex-1 items-center justify-center px-4 py-12">
-        <div className="w-full max-w-sm space-y-8">
+      <div className="flex flex-1 items-center justify-center px-4 pb-10 pt-[max(1rem,env(safe-area-inset-top))] sm:px-6 sm:pb-12 sm:pt-12">
+        <div className="w-full max-w-sm space-y-6 sm:space-y-8">
+          <div className="flex justify-end">
+            <LocaleSwitcher />
+          </div>
           <div className="flex justify-center lg:hidden">
             <Link href="/" className="flex items-center gap-2">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/20">
@@ -74,84 +114,80 @@ export function AuthPage() {
 
           <div className="space-y-2 text-center lg:text-left">
             <h1 className="font-display text-2xl font-bold text-foreground">
-              {isSignup ? "Ro'yxatdan o'tish" : "Tizimga kirish"}
+              {isSignup ? t("titleSignUp") : t("titleSignIn")}
             </h1>
             <p className="text-sm text-muted-foreground">
-              {isSignup ? "Bepul hisob yarating va boshlang" : "Hisobingizga kiring"}
+              {isSignup ? t("subtitleSignUp") : t("subtitleSignIn")}
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {isSignup && (
               <div className="space-y-1.5">
-                <label className="text-xs font-medium tracking-wider text-muted-foreground uppercase">Ism</label>
+                <label className="text-xs font-medium tracking-wider text-muted-foreground uppercase">{t("name")}</label>
                 <div className="relative">
                   <User className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <input
+                  <Input
                     type="text"
-                    placeholder="Ismingiz"
+                    placeholder={t("namePlaceholder")}
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full rounded-xl border border-border bg-secondary py-3 pr-4 pl-10 text-sm text-foreground placeholder:text-muted-foreground transition-shadow focus:ring-2 focus:ring-primary/30 focus:outline-none"
+                    className="pl-10 pr-4"
                   />
                 </div>
               </div>
             )}
 
             <div className="space-y-1.5">
-              <label className="text-xs font-medium tracking-wider text-muted-foreground uppercase">Email</label>
+              <label className="text-xs font-medium tracking-wider text-muted-foreground uppercase">{t("email")}</label>
               <div className="relative">
                 <Mail className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <input
+                <Input
                   type="email"
                   placeholder="email@example.com"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full rounded-xl border border-border bg-secondary py-3 pr-4 pl-10 text-sm text-foreground placeholder:text-muted-foreground transition-shadow focus:ring-2 focus:ring-primary/30 focus:outline-none"
+                  className="pl-10 pr-4"
                 />
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-medium tracking-wider text-muted-foreground uppercase">Parol</label>
+              <label className="text-xs font-medium tracking-wider text-muted-foreground uppercase">{t("password")}</label>
               <div className="relative">
                 <Lock className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <input
+                <Input
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="w-full rounded-xl border border-border bg-secondary py-3 pr-10 pl-10 text-sm text-foreground placeholder:text-muted-foreground transition-shadow focus:ring-2 focus:ring-primary/30 focus:outline-none"
+                  className="pl-10 pr-10"
                 />
-                <button
+                <IconButton
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
+                  icon={showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  variant="ghost"
+                  size="sm"
+                  className="absolute top-1/2 right-2 -translate-y-1/2"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                />
               </div>
             </div>
 
-            <button
-              type="submit"
-              className="glow-primary flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 font-display font-semibold text-primary-foreground transition-all hover:opacity-90"
-            >
-              {isSignup ? "Ro'yxatdan o'tish" : "Kirish"}
+            <Button type="submit" variant="primary" size="lg" className="w-full" disabled={isSubmitting}>
+              {isSignup ? t("submitSignUp") : t("submitSignIn")}
               <ArrowRight className="h-4 w-4" />
-            </button>
+            </Button>
           </form>
 
           <div className="flex items-center gap-4">
             <div className="h-px flex-1 bg-border" />
-            <span className="text-xs text-muted-foreground">yoki</span>
+            <span className="text-xs text-muted-foreground">{t("or")}</span>
             <div className="h-px flex-1 bg-border" />
           </div>
 
-          <button
-            type="button"
-            className="flex w-full items-center justify-center gap-3 rounded-xl border border-border py-3 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
-          >
+          <Button type="button" variant="outline" size="lg" className="w-full gap-3">
             <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none">
               <path
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"
@@ -170,13 +206,13 @@ export function AuthPage() {
                 fill="#EA4335"
               />
             </svg>
-            Google bilan kirish
-          </button>
+            {t("google")}
+          </Button>
 
           <p className="text-center text-sm text-muted-foreground">
-            {isSignup ? "Hisobingiz bormi?" : "Hisobingiz yo'qmi?"}{" "}
+            {isSignup ? t("hasAccount") : t("noAccount")}{" "}
             <button type="button" onClick={() => setIsSignup(!isSignup)} className="font-medium text-primary hover:underline">
-              {isSignup ? "Kirish" : "Ro'yxatdan o'tish"}
+              {isSignup ? t("linkSignIn") : t("linkSignUp")}
             </button>
           </p>
         </div>

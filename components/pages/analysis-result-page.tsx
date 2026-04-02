@@ -1,4 +1,9 @@
-import Link from "next/link";
+'use client';
+
+import { useEffect, useMemo, useState } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
+import { useSearchParams } from 'next/navigation';
+import { toast } from 'sonner';
 import {
   Dumbbell,
   ArrowLeft,
@@ -6,224 +11,369 @@ import {
   Zap,
   Info,
   ChevronRight,
-  Repeat,
   BookOpen,
   Star,
   AlertTriangle,
-} from "lucide-react";
+} from 'lucide-react';
 
-const mockResult = {
-  name: "Lat Pulldown Machine",
-  nameUz: "Lat Pulldown Mashinasi",
-  category: "Orqa muskullar",
-  difficulty: "O'rta",
-  description:
-    "Lat pulldown mashinasi — bu orqa muskullarni, ayniqsa latissimus dorsi (keng orqa muskuli) ni kuchaytirish uchun mo'ljallangan. Bu mashq yuqoridan pastga tortish harakatini bajaradi.",
-  howToUse: [
-    "O'rindiqqa o'tiring va tizzalaringizni pad ostiga joylashtiring",
-    "Barni yelka kengligidan bir oz kengroq ushlang",
-    "Ko'krak suyagiga qarab sekin pastga torting",
-    "Tirsaklaringizni orqaga va pastga yo'naltiring",
-    "Sekin yuqoriga qaytaring va takrorlang",
-  ],
-  muscles: {
-    primary: [
-      { name: "Latissimus Dorsi", nameUz: "Keng orqa muskuli", percentage: 85 },
-      { name: "Teres Major", nameUz: "Katta dumaloq muskul", percentage: 70 },
-    ],
-    secondary: [
-      { name: "Biceps Brachii", nameUz: "Biceps", percentage: 55 },
-      { name: "Rhomboids", nameUz: "Rombsimon muskullar", percentage: 45 },
-      { name: "Posterior Deltoid", nameUz: "Orqa deltoid", percentage: 35 },
-    ],
-  },
-  tips: [
-    "Juda og'ir vazndan boshlashdan saqlaning",
-    "Orqa muskullarni siqishga e'tibor bering",
-    "Tana holatini to'g'ri saqlang — orqaga juda ko'p yotmang",
-    "Har bir takrorlashda to'liq harakat amplitudasini bajaring",
-  ],
-  sets: "3-4 set × 10-12 takrorlash",
-  restTime: "60-90 soniya",
-};
+import { LocaleSwitcher } from '@/components/locale-switcher';
+import { HeaderActionLink } from '@/components/ui/header-action';
+import { PreviewImage } from '@/components/ui/preview-image';
+import { Link } from '@/i18n/navigation';
+import type { AiSearchData } from '@/lib/api/ai';
+import { getAiSessionById } from '@/lib/api/ai';
+import { getApiErrorMessage } from '@/lib/api/http';
+import { useAiStore } from '@/stores/ai';
+
+function renderBoldInline(text: string) {
+  const parts = text.split('**');
+  if (parts.length === 1) return <>{text}</>;
+  return (
+    <>
+      {parts.map((p, idx) =>
+        idx % 2 === 1 ? (
+          <strong key={idx} className='font-semibold text-foreground'>
+            {p}
+          </strong>
+        ) : (
+          <span key={idx}>{p}</span>
+        ),
+      )}
+    </>
+  );
+}
+
+function uploadsUrl(pathOrUrl: string) {
+  const base = process.env.NEXT_PUBLIC_API_URL ?? '';
+  if (!pathOrUrl) return '';
+  if (pathOrUrl.startsWith('http://') || pathOrUrl.startsWith('https://'))
+    return pathOrUrl;
+  return `${base}${pathOrUrl}`;
+}
 
 export function AnalysisResultPage() {
+  const t = useTranslations('Result');
+  const tc = useTranslations('Common');
+  const locale = useLocale();
+  const searchParams = useSearchParams();
+  const sessionIdParam = searchParams.get('sessionId');
+  const sessionId = sessionIdParam ? Number(sessionIdParam) : null;
+
+  const storeSessionId = useAiStore((s) => s.sessionId);
+  const storeData = useAiStore((s) => s.data);
+  const setResult = useAiStore((s) => s.setResult);
+
+  const [data, setData] = useState<AiSearchData | null>(() => {
+    if (sessionId && storeSessionId === sessionId && storeData)
+      return storeData;
+    return null;
+  });
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function run() {
+      if (!sessionId) return;
+      if (storeSessionId === sessionId && storeData) {
+        setData(storeData);
+        return;
+      }
+      try {
+        setLoading(true);
+        const session = await getAiSessionById(sessionId, { lang: locale });
+        const last = session.posts[session.posts.length - 1];
+        if (!last?.result) return;
+        if (cancelled) return;
+        setResult({ sessionId, data: last.result });
+        setData(last.result);
+      } catch (err) {
+        toast.error(getApiErrorMessage(err));
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [locale, sessionId, setResult, storeData, storeSessionId]);
+
+  const equipmentName = data?.equipment?.name ?? t('title');
+  const confidenceText =
+    typeof data?.equipment?.confidence === 'number'
+      ? `${Math.round(data.equipment.confidence * 100)}%`
+      : null;
+  const images = data?.images ?? [];
+
   return (
-    <div className="gradient-mesh min-h-screen bg-background">
-      <header className="glass sticky top-0 z-50">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/20">
-              <Dumbbell className="h-4 w-4 text-primary" />
+    <div className='gradient-mesh min-h-screen bg-background'>
+      <header className='glass sticky top-0 z-50 pt-[env(safe-area-inset-top)]'>
+        <div className='container mx-auto flex min-h-14 items-center justify-between gap-2 px-3 sm:min-h-16 sm:px-4'>
+          <Link href='/' className='flex min-w-0 shrink-0 items-center gap-2'>
+            <div className='flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/20'>
+              <Dumbbell className='h-4 w-4 text-primary' />
             </div>
-            <span className="font-display text-lg font-bold text-foreground">
-              Gym<span className="text-primary">AI</span>
+            <span className='font-display truncate text-base font-bold text-foreground sm:text-lg'>
+              Gym<span className='text-primary'>AI</span>
             </span>
           </Link>
-          <Link
-            href="/dashboard"
-            className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Orqaga
-          </Link>
+          <div className='flex min-w-0 items-center justify-end gap-1.5 sm:gap-3'>
+            <LocaleSwitcher className='shrink-0' />
+            <HeaderActionLink
+              href='/dashboard'
+              icon={<ArrowLeft className='h-4 w-4 shrink-0' />}
+              label={tc('back')}
+              className='min-w-0 px-1.5 sm:px-2'
+            />
+          </div>
         </div>
       </header>
 
-      <main className="container mx-auto max-w-6xl px-4 py-8">
-        <div className="grid gap-8 lg:grid-cols-5">
-          <div className="space-y-6 lg:col-span-2">
-            <div className="glass overflow-hidden rounded-2xl">
-              <div className="flex aspect-[4/3] items-center justify-center bg-secondary">
-                <Dumbbell className="h-16 w-16 text-muted-foreground/20" />
-              </div>
-              <div className="space-y-3 p-5">
-                <div className="flex items-center gap-2">
-                  <div className="h-2 w-2 animate-pulse rounded-full bg-primary" />
-                  <span className="text-xs font-medium text-primary">AI aniqladi</span>
+      <main className='container mx-auto max-w-6xl px-3 py-6 sm:px-4 sm:py-8'>
+        <div className='grid gap-6 sm:gap-8 lg:grid-cols-5'>
+          <div className='space-y-6 lg:col-span-2'>
+            <div className='glass overflow-hidden rounded-2xl'>
+              {images.length ? (
+                <PreviewImage
+                  src={uploadsUrl(images[0].url)}
+                  alt={images[0].caption ?? equipmentName}
+                  caption={images[0].caption ?? equipmentName}
+                  className='aspect-4/3 w-full object-cover'
+                />
+              ) : (
+                <div className='flex aspect-4/3 items-center justify-center bg-secondary'>
+                  <Dumbbell className='h-16 w-16 text-muted-foreground/20' />
                 </div>
-                <h1 className="font-display text-2xl font-bold text-foreground">{mockResult.name}</h1>
-                <p className="text-sm text-muted-foreground">{mockResult.nameUz}</p>
-                <div className="flex flex-wrap gap-2 pt-1">
-                  <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-                    {mockResult.category}
+              )}
+              <div className='space-y-3 p-5'>
+                <div className='flex items-center gap-2'>
+                  <div className='h-2 w-2 animate-pulse rounded-full bg-primary' />
+                  <span className='text-xs font-medium text-primary'>
+                    {t('aiDetected')}
                   </span>
-                  <span className="rounded-full bg-accent/10 px-3 py-1 text-xs font-medium text-accent">
-                    {mockResult.difficulty}
-                  </span>
+                </div>
+                <h1 className='font-display text-2xl font-bold text-foreground'>
+                  {equipmentName}
+                </h1>
+                {confidenceText ? (
+                  <p className='text-sm text-muted-foreground'>
+                    {t('confidence', { value: confidenceText })}
+                  </p>
+                ) : null}
+                <div className='flex flex-wrap gap-2 pt-1'>
+                  {data?.equipment?.name ? (
+                    <span className='rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary'>
+                      {t('resultReady')}
+                    </span>
+                  ) : (
+                    <span className='rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary'>
+                      {t('noResult')}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="glass space-y-1 rounded-xl p-4 text-center">
-                <Repeat className="mx-auto h-5 w-5 text-primary" />
-                <p className="text-xs text-muted-foreground">Tavsiya</p>
-                <p className="font-display text-sm font-semibold text-foreground">{mockResult.sets}</p>
+            <div className='grid grid-cols-2 gap-3'>
+              <div className='glass space-y-1 rounded-xl p-4 text-center'>
+                <Target className='mx-auto h-5 w-5 text-primary' />
+                <p className='text-xs text-muted-foreground'>
+                  {t('targetMuscles')}
+                </p>
+                <p className='truncate font-display text-sm font-semibold text-foreground'>
+                  {data?.muscles.length ?? '-'}
+                </p>
               </div>
-              <div className="glass space-y-1 rounded-xl p-4 text-center">
-                <Zap className="mx-auto h-5 w-5 text-accent" />
-                <p className="text-xs text-muted-foreground">Dam olish</p>
-                <p className="font-display text-sm font-semibold text-foreground">{mockResult.restTime}</p>
+              <div className='glass space-y-1 rounded-xl p-4 text-center'>
+                <Zap className='mx-auto h-5 w-5 text-accent' />
+                <p className='text-xs text-muted-foreground'>
+                  {t('confidenceShort')}
+                </p>
+                <p className='font-display text-sm font-semibold text-foreground'>
+                  {confidenceText ?? '-'}
+                </p>
               </div>
             </div>
 
-            <div className="glass space-y-3 rounded-2xl p-5">
-              <div className="flex items-center gap-2">
-                <Star className="h-4 w-4 text-primary" />
-                <h3 className="font-display text-sm font-semibold text-foreground">AI yaratgan rasm</h3>
+            <div className='glass space-y-3 rounded-2xl p-5'>
+              <div className='flex items-center gap-2'>
+                <Star className='h-4 w-4 text-primary' />
+                <h3 className='font-display text-sm font-semibold text-foreground'>
+                  {t('aiImage')}
+                </h3>
               </div>
-              <div className="flex aspect-video items-center justify-center rounded-xl border border-border bg-gradient-to-br from-primary/5 to-accent/5">
-                <div className="space-y-2 text-center">
-                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-                    <Target className="h-6 w-6 text-primary" />
+              {images.length ? (
+                <div className='space-y-3'>
+                  <div className='grid grid-cols-2 gap-2'>
+                    {images.map((image, idx) => (
+                      <div
+                        key={`${image.url}-${idx}`}
+                        className='overflow-hidden rounded-xl border border-border/60 bg-secondary/30'
+                      >
+                        <PreviewImage
+                          src={uploadsUrl(image.url)}
+                          alt={image.caption || `${equipmentName} ${idx + 1}`}
+                          caption={image.caption || `${equipmentName} ${idx + 1}`}
+                          className='aspect-video w-full object-cover'
+                        />
+                        {image.caption ? (
+                          <p className='line-clamp-2 p-2 text-[11px] text-muted-foreground'>
+                            {image.caption}
+                          </p>
+                        ) : null}
+                      </div>
+                    ))}
                   </div>
-                  <p className="text-xs text-muted-foreground">Mushak xaritasi</p>
                 </div>
-              </div>
+              ) : (
+                <p className='text-xs leading-relaxed text-muted-foreground'>
+                  {t('muscleMap')}
+                </p>
+              )}
             </div>
           </div>
 
-          <div className="space-y-6 lg:col-span-3">
-            <div className="glass space-y-4 rounded-2xl p-6">
-              <div className="flex items-center gap-2">
-                <Info className="h-4 w-4 text-primary" />
-                <h2 className="font-display text-lg font-semibold text-foreground">Tavsif</h2>
+          <div className='space-y-6 lg:col-span-3'>
+            <div className='glass space-y-4 rounded-2xl p-6'>
+              <div className='flex items-center gap-2'>
+                <Info className='h-4 w-4 text-primary' />
+                <h2 className='font-display text-lg font-semibold text-foreground'>
+                  {t('description')}
+                </h2>
               </div>
-              <p className="text-sm leading-relaxed text-muted-foreground">{mockResult.description}</p>
+              {loading ? (
+                <p className='text-sm leading-relaxed text-muted-foreground'>
+                  {t('loading')}
+                </p>
+              ) : data ? (
+                <p className='text-sm leading-relaxed text-muted-foreground'>
+                  {t('detectedEquipment', { name: data.equipment.name })}
+                </p>
+              ) : (
+                <p className='text-sm leading-relaxed text-muted-foreground'>
+                  {t('openFromDashboard')}
+                </p>
+              )}
             </div>
 
-            <div className="glass space-y-4 rounded-2xl p-6">
-              <div className="flex items-center gap-2">
-                <BookOpen className="h-4 w-4 text-primary" />
-                <h2 className="font-display text-lg font-semibold text-foreground">Qanday foydalanish</h2>
+            {data?.usage?.steps?.length ? (
+              <div className='glass space-y-4 rounded-2xl p-6'>
+                <div className='flex items-center gap-2'>
+                  <BookOpen className='h-4 w-4 text-primary' />
+                  <h2 className='font-display text-lg font-semibold text-foreground'>
+                    {t('howToUse')}
+                  </h2>
+                </div>
+                <div className='space-y-2'>
+                  {data.usage.steps.map((line, i) => (
+                    <div
+                      key={i}
+                      className='text-sm leading-relaxed text-muted-foreground whitespace-pre-wrap'
+                    >
+                      {renderBoldInline(line)}
+                    </div>
+                  ))}
+                </div>
               </div>
-              <ol className="space-y-3">
-                {mockResult.howToUse.map((step, i) => (
-                  <li key={i} className="flex items-start gap-3">
-                    <div className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                      <span className="font-display text-xs font-bold text-primary">{i + 1}</span>
-                    </div>
-                    <p className="pt-1 text-sm leading-relaxed text-muted-foreground">{step}</p>
-                  </li>
-                ))}
-              </ol>
-            </div>
+            ) : null}
 
-            <div className="glass space-y-5 rounded-2xl p-6">
-              <div className="flex items-center gap-2">
-                <Target className="h-4 w-4 text-primary" />
-                <h2 className="font-display text-lg font-semibold text-foreground">Maqsadli muskullar</h2>
+            {data?.muscles?.length ? (
+              <div className='glass space-y-5 rounded-2xl p-6'>
+                <div className='flex items-center gap-2'>
+                  <Target className='h-4 w-4 text-primary' />
+                  <h2 className='font-display text-lg font-semibold text-foreground'>
+                    {t('targetMuscles')}
+                  </h2>
+                </div>
+                <div className='flex flex-wrap gap-2'>
+                  {data.muscles.map((m) => (
+                    <span
+                      key={m}
+                      className='rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs text-foreground'
+                    >
+                      {m}
+                    </span>
+                  ))}
+                </div>
               </div>
+            ) : null}
 
-              <div className="space-y-4">
-                <h3 className="text-xs font-medium tracking-wider text-primary uppercase">Asosiy muskullar</h3>
-                {mockResult.muscles.primary.map((muscle) => (
-                  <div key={muscle.name} className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <span className="text-sm font-medium text-foreground">{muscle.nameUz}</span>
-                        <span className="ml-2 text-xs text-muted-foreground">({muscle.name})</span>
-                      </div>
-                      <span className="font-display text-sm font-bold text-primary">{muscle.percentage}%</span>
-                    </div>
-                    <div className="h-2 overflow-hidden rounded-full bg-secondary">
-                      <div
-                        className="h-full rounded-full bg-gradient-to-r from-primary to-primary/60 transition-all duration-1000"
-                        style={{ width: `${muscle.percentage}%` }}
-                      />
-                    </div>
+            <div className='grid gap-4 md:grid-cols-2'>
+              {data?.usage?.cues?.length ? (
+                <div className='glass space-y-4 rounded-2xl p-6'>
+                  <div className='flex items-center gap-2'>
+                    <Star className='h-4 w-4 text-primary' />
+                    <h2 className='font-display text-lg font-semibold text-foreground'>
+                      {t('cuesTitle')}
+                    </h2>
                   </div>
-                ))}
-              </div>
+                  <ul className='space-y-2'>
+                    {data.usage.cues.map((x, i) => (
+                      <li key={i} className='flex items-start gap-3'>
+                        <ChevronRight className='mt-0.5 h-4 w-4 shrink-0 text-primary' />
+                        <p className='text-sm text-muted-foreground whitespace-pre-wrap'>
+                          {x}
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
 
-              <div className="space-y-4">
-                <h3 className="text-xs font-medium tracking-wider text-accent uppercase">Yordamchi muskullar</h3>
-                {mockResult.muscles.secondary.map((muscle) => (
-                  <div key={muscle.name} className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <span className="text-sm font-medium text-foreground">{muscle.nameUz}</span>
-                        <span className="ml-2 text-xs text-muted-foreground">({muscle.name})</span>
-                      </div>
-                      <span className="font-display text-sm font-bold text-accent">{muscle.percentage}%</span>
-                    </div>
-                    <div className="h-2 overflow-hidden rounded-full bg-secondary">
-                      <div
-                        className="h-full rounded-full bg-gradient-to-r from-accent to-accent/60 transition-all duration-1000"
-                        style={{ width: `${muscle.percentage}%` }}
-                      />
-                    </div>
+              {data?.usage?.commonMistakes?.length ? (
+                <div className='glass space-y-4 rounded-2xl p-6'>
+                  <div className='flex items-center gap-2'>
+                    <AlertTriangle className='h-4 w-4 text-primary' />
+                    <h2 className='font-display text-lg font-semibold text-foreground'>
+                      {t('mistakesTitle')}
+                    </h2>
                   </div>
-                ))}
-              </div>
+                  <ul className='space-y-2'>
+                    {data.usage.commonMistakes.map((x, i) => (
+                      <li key={i} className='flex items-start gap-3'>
+                        <ChevronRight className='mt-0.5 h-4 w-4 shrink-0 text-primary' />
+                        <p className='text-sm text-muted-foreground whitespace-pre-wrap'>
+                          {x}
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
             </div>
 
-            <div className="glass space-y-4 rounded-2xl p-6">
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-primary" />
-                <h2 className="font-display text-lg font-semibold text-foreground">Maslahatlar</h2>
+            {data?.tips?.length ? (
+              <div className='glass space-y-4 rounded-2xl p-6'>
+                <div className='flex items-center gap-2'>
+                  <Star className='h-4 w-4 text-primary' />
+                  <h2 className='font-display text-lg font-semibold text-foreground'>
+                    {t('tips')}
+                  </h2>
+                </div>
+                <ul className='space-y-2'>
+                  {data.tips.map((tip, i) => (
+                    <li key={i} className='flex items-start gap-3'>
+                      <ChevronRight className='mt-0.5 h-4 w-4 shrink-0 text-primary' />
+                      <p className='text-sm text-muted-foreground whitespace-pre-wrap'>
+                        {tip}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
               </div>
-              <ul className="space-y-2">
-                {mockResult.tips.map((tip, i) => (
-                  <li key={i} className="flex items-start gap-3">
-                    <ChevronRight className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" />
-                    <p className="text-sm text-muted-foreground">{tip}</p>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            ) : null}
 
             <Link
-              href="/dashboard"
-              className="flex w-full items-center justify-center gap-2 rounded-xl border border-border py-4 font-display font-semibold text-foreground transition-colors hover:bg-secondary"
+              href='/dashboard'
+              className='flex w-full items-center justify-center gap-2 rounded-xl border border-border py-4 font-display font-semibold text-foreground transition-colors hover:bg-secondary'
             >
-              Yangi tahlil qilish
-              <ChevronRight className="h-4 w-4" />
+              {t('newAnalysis')}
+              <ChevronRight className='h-4 w-4' />
             </Link>
           </div>
         </div>
       </main>
+
     </div>
   );
 }
