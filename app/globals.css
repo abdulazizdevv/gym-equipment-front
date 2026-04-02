@@ -1,26 +1,160 @@
 @import "tailwindcss";
-
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@plugin "tailwindcss-animate";
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+:root {
+  --background: 220 20% 4%;
+  --foreground: 210 20% 95%;
+
+  --card: 220 18% 8%;
+  --card-foreground: 210 20% 95%;
+
+  --popover: 220 18% 8%;
+  --popover-foreground: 210 20% 95%;
+
+  --primary: 150 80% 45%;
+  --primary-foreground: 220 20% 4%;
+
+  --secondary: 220 15% 14%;
+  --secondary-foreground: 210 20% 90%;
+
+  --muted: 220 12% 12%;
+  --muted-foreground: 220 10% 55%;
+
+  --accent: 265 80% 60%;
+  --accent-foreground: 210 20% 95%;
+
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 210 40% 98%;
+
+  --border: 220 12% 16%;
+  --input: 220 12% 16%;
+  --ring: 150 80% 45%;
+
+  --radius: 0.75rem;
+
+  --glow-primary: 150 80% 45%;
+  --glow-accent: 265 80% 60%;
+  --surface-glass: 220 20% 6%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+  }
+  .font-body {
+    font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  }
+  .glow-primary {
+    box-shadow:
+      0 0 20px hsl(var(--primary) / 0.3),
+      0 0 60px hsl(var(--primary) / 0.1);
+  }
+  .glow-accent {
+    box-shadow:
+      0 0 20px hsl(var(--accent) / 0.3),
+      0 0 60px hsl(var(--accent) / 0.1);
+  }
+  .glass {
+    background: hsl(var(--surface-glass) / 0.6);
+    backdrop-filter: blur(20px);
+    border: 1px solid hsl(var(--border));
+  }
+  .gradient-mesh {
+    background:
+      radial-gradient(ellipse at 20% 50%, hsl(var(--primary) / 0.08) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 20%, hsl(var(--accent) / 0.08) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 80%, hsl(var(--primary) / 0.04) 0%, transparent 50%);
+  }
+  .text-gradient {
+    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes pulse-glow {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+@keyframes scan-line {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100%);
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
+.animate-scan {
+  animation: scan-line 2s ease-in-out infinite;
 }
