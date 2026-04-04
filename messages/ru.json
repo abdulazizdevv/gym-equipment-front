@@ -101,6 +101,7 @@
     "delete": "Удалить"
   },
   "Result": {
+    "title": "Результат анализа",
     "back": "Назад",
     "aiDetected": "ИИ определил",
     "confidence": "Точность: {value}",

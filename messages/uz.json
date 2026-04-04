@@ -101,6 +101,7 @@
     "delete": "O‘chirish"
   },
   "Result": {
+    "title": "Tahlil natijasi",
     "back": "Orqaga",
     "aiDetected": "AI aniqladi",
     "confidence": "Aniqlik: {value}",

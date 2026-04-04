@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocale, useTranslations } from 'next-intl';
 import {
   Dumbbell,
@@ -28,51 +29,54 @@ export function DashboardPage() {
   const tc = useTranslations('Common');
   const locale = useLocale();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const logout = useAuthStore((s) => s.logout);
   const setAiResult = useAiStore((s) => s.setResult);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [recent, setRecent] = useState<
-    Array<{ id: number; title: string; imageUrl: string | null; createdAt: string }>
-  >([]);
   const [isDragging, setIsDragging] = useState(false);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    return () => {
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
-    };
-  }, [previewUrl]);
+  const recentQuery = useQuery({
+    queryKey: ['ai-sessions-recent', locale],
+    queryFn: () => getAiSessions({ lang: locale, page: 1, limit: 4 }),
+  });
 
-  useEffect(() => {
-    let cancelled = false;
-    async function loadRecent() {
-      try {
-        const res = await getAiSessions({ lang: locale, page: 1, limit: 4 });
-        if (cancelled) return;
-        setRecent(
-          res.items.map((x) => ({
-            id: x.id,
-            title: x.title?.trim() || `Session #${x.id}`,
-            imageUrl: x.imageUrl ? `${process.env.NEXT_PUBLIC_API_URL ?? ''}${x.imageUrl}` : null,
-            createdAt: x.createdAt,
-          })),
-        );
-      } catch {
-        if (!cancelled) setRecent([]);
-      }
-    }
-    loadRecent();
-    return () => {
-      cancelled = true;
-    };
-  }, [locale]);
+  const recent = useMemo(
+    () =>
+      (recentQuery.data?.items ?? []).map((x) => ({
+        id: x.id,
+        title: x.title?.trim() || `Session #${x.id}`,
+        imageUrl: x.imageUrl
+          ? `${process.env.NEXT_PUBLIC_API_URL ?? ''}${x.imageUrl}`
+          : null,
+        createdAt: x.createdAt,
+      })),
+    [recentQuery.data],
+  );
+
+  const analyzeMutation = useMutation({
+    mutationFn: (file: File) =>
+      postAiEquipmentSearch({
+        image: file,
+        lang: locale,
+      }),
+    onSuccess: (res) => {
+      setAiResult({ sessionId: res.sessionId, data: res.data });
+      queryClient.invalidateQueries({ queryKey: ['ai-sessions-recent', locale] });
+      router.push(`/result?sessionId=${res.sessionId}`);
+    },
+    onError: (err) => {
+      toast.error(getApiErrorMessage(err));
+    },
+  });
 
   const setImageFile = (file: File | null) => {
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setPreviewUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return file ? URL.createObjectURL(file) : null;
+    });
     setSelectedFile(file);
-    setPreviewUrl(file ? URL.createObjectURL(file) : null);
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -93,18 +97,8 @@ export function DashboardPage() {
 
   const handleAnalyze = async () => {
     if (!selectedFile) return;
-    if (isAnalyzing) return;
-
-    try {
-      setIsAnalyzing(true);
-      const res = await postAiEquipmentSearch({ image: selectedFile, lang: locale });
-      setAiResult({ sessionId: res.sessionId, data: res.data });
-      router.push(`/result?sessionId=${res.sessionId}`);
-    } catch (err) {
-      toast.error(getApiErrorMessage(err));
-    } finally {
-      setIsAnalyzing(false);
-    }
+    if (analyzeMutation.isPending) return;
+    await analyzeMutation.mutateAsync(selectedFile);
   };
 
   return (
@@ -121,7 +115,11 @@ export function DashboardPage() {
           </Link>
           <div className='flex min-w-0 items-center justify-end gap-1.5 sm:gap-3'>
             <LocaleSwitcher className='shrink-0' />
-            <HeaderActionLink href='/history' icon={<History className='h-4 w-4 shrink-0' />} label={tc('history')} />
+            <HeaderActionLink
+              href='/history'
+              icon={<History className='h-4 w-4 shrink-0' />}
+              label={tc('history')}
+            />
             <HeaderAction
               icon={<LogOut className='h-4 w-4 shrink-0' />}
               label={tc('logout')}
@@ -182,7 +180,7 @@ export function DashboardPage() {
                   aria-label='Remove image'
                 />
 
-                {isAnalyzing && (
+                {analyzeMutation.isPending && (
                   <div className='absolute inset-0 flex items-center justify-center bg-background/50'>
                     <div className='absolute inset-0 overflow-hidden'>
                       <div className='animate-scan h-1 w-full bg-linear-to-r from-transparent via-primary to-transparent' />
@@ -235,10 +233,14 @@ export function DashboardPage() {
                 onClick={handleAnalyze}
                 variant='primary'
                 size='lg'
-                disabled={isAnalyzing}
+                disabled={analyzeMutation.isPending}
                 className='group w-full gap-3 sm:w-auto sm:px-10 sm:text-lg'
               >
-                {isAnalyzing ? <Loader2 className='h-5 w-5 animate-spin' /> : <Sparkles className='h-5 w-5' />}
+                {analyzeMutation.isPending ? (
+                  <Loader2 className='h-5 w-5 animate-spin' />
+                ) : (
+                  <Sparkles className='h-5 w-5' />
+                )}
                 {t('analyzeBtn')}
               </Button>
             </div>
@@ -259,7 +261,11 @@ export function DashboardPage() {
                   <div className='flex aspect-square items-center justify-center overflow-hidden rounded-lg bg-secondary'>
                     {item.imageUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element -- backend-hosted upload preview
-                      <img src={item.imageUrl} alt={item.title} className='h-full w-full object-cover' />
+                      <img
+                        src={item.imageUrl}
+                        alt={item.title}
+                        className='h-full w-full object-cover'
+                      />
                     ) : (
                       <Dumbbell className='h-8 w-8 text-muted-foreground/30' />
                     )}

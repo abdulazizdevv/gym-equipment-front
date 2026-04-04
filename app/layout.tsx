@@ -1,7 +1,11 @@
-import type { ReactNode } from "react";
+import type { ReactNode } from 'react';
 
-import "./globals.css";
+import './globals.css';
 
 export default function RootLayout({ children }: { children: ReactNode }) {
-  return children;
+  return (
+    <html lang='en' suppressHydrationWarning className='h-full'>
+      <body className='min-h-full'>{children}</body>
+    </html>
+  );
 }

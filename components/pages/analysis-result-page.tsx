@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useLocale, useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
-import { toast } from 'sonner';
 import {
   Dumbbell,
   ArrowLeft,
@@ -20,8 +20,11 @@ import { LocaleSwitcher } from '@/components/locale-switcher';
 import { HeaderActionLink } from '@/components/ui/header-action';
 import { PreviewImage } from '@/components/ui/preview-image';
 import { Link } from '@/i18n/navigation';
-import type { AiSearchData } from '@/lib/api/ai';
-import { getAiSessionById } from '@/lib/api/ai';
+import {
+  getAiSessionById,
+  getLatestSessionResult,
+  getSessionUploadImageUrl,
+} from '@/lib/api/ai';
 import { getApiErrorMessage } from '@/lib/api/http';
 import { useAiStore } from '@/stores/ai';
 
@@ -61,49 +64,45 @@ export function AnalysisResultPage() {
 
   const storeSessionId = useAiStore((s) => s.sessionId);
   const storeData = useAiStore((s) => s.data);
-  const setResult = useAiStore((s) => s.setResult);
 
-  const [data, setData] = useState<AiSearchData | null>(() => {
-    if (sessionId && storeSessionId === sessionId && storeData)
-      return storeData;
-    return null;
+  const sessionQuery = useQuery({
+    queryKey: ['ai-session', locale, sessionId],
+    queryFn: async () => {
+      const session = await getAiSessionById(sessionId as number, { lang: locale });
+      const result = getLatestSessionResult(session);
+      if (result && sessionId) {
+        useAiStore.getState().setResult({ sessionId, data: result });
+      }
+      return session;
+    },
+    enabled: Boolean(sessionId),
   });
-  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    let cancelled = false;
-    async function run() {
-      if (!sessionId) return;
-      if (storeSessionId === sessionId && storeData) {
-        setData(storeData);
-        return;
-      }
-      try {
-        setLoading(true);
-        const session = await getAiSessionById(sessionId, { lang: locale });
-        const last = session.posts[session.posts.length - 1];
-        if (!last?.result) return;
-        if (cancelled) return;
-        setResult({ sessionId, data: last.result });
-        setData(last.result);
-      } catch (err) {
-        toast.error(getApiErrorMessage(err));
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-    run();
-    return () => {
-      cancelled = true;
+  const { analysis, uploadImagePath } = useMemo(() => {
+    const session = sessionQuery.data;
+    const fromApi = getLatestSessionResult(session);
+    const fallback =
+      sessionId != null && storeSessionId === sessionId ? storeData : null;
+    return {
+      analysis: fromApi ?? fallback ?? null,
+      uploadImagePath: getSessionUploadImageUrl(session),
     };
-  }, [locale, sessionId, setResult, storeData, storeSessionId]);
+  }, [sessionQuery.data, sessionId, storeSessionId, storeData]);
 
-  const equipmentName = data?.equipment?.name ?? t('title');
+  const equipmentName = analysis?.equipment?.name ?? t('title');
   const confidenceText =
-    typeof data?.equipment?.confidence === 'number'
-      ? `${Math.round(data.equipment.confidence * 100)}%`
+    typeof analysis?.equipment?.confidence === 'number'
+      ? `${Math.round(analysis.equipment.confidence * 100)}%`
       : null;
-  const images = data?.images ?? [];
+
+  const heroSrc = uploadImagePath ? uploadsUrl(uploadImagePath) : '';
+
+  const galleryImages = useMemo(() => {
+    const list = analysis?.images ?? [];
+    if (!uploadImagePath) return list;
+    const uploadAbs = uploadsUrl(uploadImagePath);
+    return list.filter((img) => uploadsUrl(img.url) !== uploadAbs);
+  }, [analysis, uploadImagePath]);
 
   return (
     <div className='gradient-mesh min-h-screen bg-background'>
@@ -133,11 +132,11 @@ export function AnalysisResultPage() {
         <div className='grid gap-6 sm:gap-8 lg:grid-cols-5'>
           <div className='space-y-6 lg:col-span-2'>
             <div className='glass overflow-hidden rounded-2xl'>
-              {images.length ? (
+              {heroSrc ? (
                 <PreviewImage
-                  src={uploadsUrl(images[0].url)}
-                  alt={images[0].caption ?? equipmentName}
-                  caption={images[0].caption ?? equipmentName}
+                  src={heroSrc}
+                  alt={equipmentName}
+                  caption={equipmentName}
                   className='aspect-4/3 w-full object-cover'
                 />
               ) : (
@@ -161,7 +160,7 @@ export function AnalysisResultPage() {
                   </p>
                 ) : null}
                 <div className='flex flex-wrap gap-2 pt-1'>
-                  {data?.equipment?.name ? (
+                  {analysis?.equipment?.name ? (
                     <span className='rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary'>
                       {t('resultReady')}
                     </span>
@@ -181,7 +180,7 @@ export function AnalysisResultPage() {
                   {t('targetMuscles')}
                 </p>
                 <p className='truncate font-display text-sm font-semibold text-foreground'>
-                  {data?.muscles.length ?? '-'}
+                  {analysis?.muscles?.[0] ?? '-'}
                 </p>
               </div>
               <div className='glass space-y-1 rounded-xl p-4 text-center'>
@@ -202,10 +201,10 @@ export function AnalysisResultPage() {
                   {t('aiImage')}
                 </h3>
               </div>
-              {images.length ? (
+              {galleryImages.length ? (
                 <div className='space-y-3'>
                   <div className='grid grid-cols-2 gap-2'>
-                    {images.map((image, idx) => (
+                    {galleryImages.map((image, idx) => (
                       <div
                         key={`${image.url}-${idx}`}
                         className='overflow-hidden rounded-xl border border-border/60 bg-secondary/30'
@@ -213,7 +212,9 @@ export function AnalysisResultPage() {
                         <PreviewImage
                           src={uploadsUrl(image.url)}
                           alt={image.caption || `${equipmentName} ${idx + 1}`}
-                          caption={image.caption || `${equipmentName} ${idx + 1}`}
+                          caption={
+                            image.caption || `${equipmentName} ${idx + 1}`
+                          }
                           className='aspect-video w-full object-cover'
                         />
                         {image.caption ? (
@@ -241,13 +242,17 @@ export function AnalysisResultPage() {
                   {t('description')}
                 </h2>
               </div>
-              {loading ? (
+              {sessionQuery.isPending ? (
                 <p className='text-sm leading-relaxed text-muted-foreground'>
                   {t('loading')}
                 </p>
-              ) : data ? (
+              ) : sessionQuery.isError ? (
+                <p className='text-sm leading-relaxed text-destructive'>
+                  {getApiErrorMessage(sessionQuery.error)}
+                </p>
+              ) : analysis ? (
                 <p className='text-sm leading-relaxed text-muted-foreground'>
-                  {t('detectedEquipment', { name: data.equipment.name })}
+                  {t('detectedEquipment', { name: analysis.equipment.name })}
                 </p>
               ) : (
                 <p className='text-sm leading-relaxed text-muted-foreground'>
@@ -256,7 +261,7 @@ export function AnalysisResultPage() {
               )}
             </div>
 
-            {data?.usage?.steps?.length ? (
+            {analysis?.usage?.steps?.length ? (
               <div className='glass space-y-4 rounded-2xl p-6'>
                 <div className='flex items-center gap-2'>
                   <BookOpen className='h-4 w-4 text-primary' />
@@ -265,7 +270,7 @@ export function AnalysisResultPage() {
                   </h2>
                 </div>
                 <div className='space-y-2'>
-                  {data.usage.steps.map((line, i) => (
+                  {analysis.usage.steps.map((line, i) => (
                     <div
                       key={i}
                       className='text-sm leading-relaxed text-muted-foreground whitespace-pre-wrap'
@@ -277,7 +282,7 @@ export function AnalysisResultPage() {
               </div>
             ) : null}
 
-            {data?.muscles?.length ? (
+            {analysis?.muscles?.length ? (
               <div className='glass space-y-5 rounded-2xl p-6'>
                 <div className='flex items-center gap-2'>
                   <Target className='h-4 w-4 text-primary' />
@@ -286,7 +291,7 @@ export function AnalysisResultPage() {
                   </h2>
                 </div>
                 <div className='flex flex-wrap gap-2'>
-                  {data.muscles.map((m) => (
+                  {analysis.muscles.map((m) => (
                     <span
                       key={m}
                       className='rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs text-foreground'
@@ -299,7 +304,7 @@ export function AnalysisResultPage() {
             ) : null}
 
             <div className='grid gap-4 md:grid-cols-2'>
-              {data?.usage?.cues?.length ? (
+              {analysis?.usage?.cues?.length ? (
                 <div className='glass space-y-4 rounded-2xl p-6'>
                   <div className='flex items-center gap-2'>
                     <Star className='h-4 w-4 text-primary' />
@@ -308,7 +313,7 @@ export function AnalysisResultPage() {
                     </h2>
                   </div>
                   <ul className='space-y-2'>
-                    {data.usage.cues.map((x, i) => (
+                    {analysis.usage.cues.map((x, i) => (
                       <li key={i} className='flex items-start gap-3'>
                         <ChevronRight className='mt-0.5 h-4 w-4 shrink-0 text-primary' />
                         <p className='text-sm text-muted-foreground whitespace-pre-wrap'>
@@ -320,7 +325,7 @@ export function AnalysisResultPage() {
                 </div>
               ) : null}
 
-              {data?.usage?.commonMistakes?.length ? (
+              {analysis?.usage?.commonMistakes?.length ? (
                 <div className='glass space-y-4 rounded-2xl p-6'>
                   <div className='flex items-center gap-2'>
                     <AlertTriangle className='h-4 w-4 text-primary' />
@@ -329,7 +334,7 @@ export function AnalysisResultPage() {
                     </h2>
                   </div>
                   <ul className='space-y-2'>
-                    {data.usage.commonMistakes.map((x, i) => (
+                    {analysis.usage.commonMistakes.map((x, i) => (
                       <li key={i} className='flex items-start gap-3'>
                         <ChevronRight className='mt-0.5 h-4 w-4 shrink-0 text-primary' />
                         <p className='text-sm text-muted-foreground whitespace-pre-wrap'>
@@ -342,7 +347,7 @@ export function AnalysisResultPage() {
               ) : null}
             </div>
 
-            {data?.tips?.length ? (
+            {analysis?.tips?.length ? (
               <div className='glass space-y-4 rounded-2xl p-6'>
                 <div className='flex items-center gap-2'>
                   <Star className='h-4 w-4 text-primary' />
@@ -351,7 +356,7 @@ export function AnalysisResultPage() {
                   </h2>
                 </div>
                 <ul className='space-y-2'>
-                  {data.tips.map((tip, i) => (
+                  {analysis.tips.map((tip, i) => (
                     <li key={i} className='flex items-start gap-3'>
                       <ChevronRight className='mt-0.5 h-4 w-4 shrink-0 text-primary' />
                       <p className='text-sm text-muted-foreground whitespace-pre-wrap'>
@@ -373,7 +378,6 @@ export function AnalysisResultPage() {
           </div>
         </div>
       </main>
-
     </div>
   );
 }

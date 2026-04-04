@@ -80,11 +80,49 @@ export type AiSessionPost = {
   createdAt: string;
 };
 
+/** GET /ai/sessions/:id — yangi API: bitta `data`; eski: `posts[]` */
 export type AiSessionResponse = {
   id: number;
   createdAt: string;
-  posts: AiSessionPost[];
+  data?: AiSessionPost;
+  posts?: AiSessionPost[];
 };
+
+export function getSessionPosts(session: AiSessionResponse): AiSessionPost[] {
+  if (Array.isArray(session.posts) && session.posts.length > 0) {
+    return session.posts;
+  }
+  if (session.data) {
+    return [session.data];
+  }
+  return [];
+}
+
+export function getLatestSessionPost(
+  session: AiSessionResponse | undefined,
+): AiSessionPost | undefined {
+  if (!session) return undefined;
+  const posts = getSessionPosts(session);
+  return posts[posts.length - 1];
+}
+
+/** Yuklangan foydalanuvchi rasmi (odatda `search` postdagi `imageUrl`). */
+export function getSessionUploadImageUrl(
+  session: AiSessionResponse | undefined,
+): string | null {
+  if (!session) return null;
+  const posts = getSessionPosts(session);
+  const post =
+    posts.find((p) => p.type === "search" && p.imageUrl) ??
+    posts.find((p) => p.imageUrl);
+  return post?.imageUrl ?? null;
+}
+
+export function getLatestSessionResult(
+  session: AiSessionResponse | undefined,
+): AiSearchData | null {
+  return getLatestSessionPost(session)?.result ?? null;
+}
 
 export type AiSessionListItem = {
   id: number;

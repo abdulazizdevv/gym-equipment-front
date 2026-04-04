@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocale, useTranslations } from 'next-intl';
 import { Dumbbell, ArrowLeft, Search, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -33,83 +34,71 @@ function uploadsUrl(pathOrUrl: string | null) {
 export function HistoryPage() {
   const t = useTranslations('History');
   const tc = useTranslations('Common');
+  const queryClient = useQueryClient();
   const locale = useLocale();
-  const [items, setItems] = useState<HistoryItem[]>([]);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
-  const [loading, setLoading] = useState(true);
-  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
-    const id = setTimeout(() => {
-      setDebouncedSearch(search.trim());
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    searchDebounceRef.current = setTimeout(() => {
+      setDebouncedSearch(value.trim());
       setPage(1);
     }, 350);
-    return () => clearTimeout(id);
-  }, [search]);
+  };
 
-  useEffect(() => {
-    let cancelled = false;
+  const historyQuery = useQuery({
+    queryKey: ['ai-sessions', locale, page, debouncedSearch],
+    queryFn: () =>
+      getAiSessions({
+        lang: locale,
+        page,
+        limit: 10,
+        q: debouncedSearch || undefined,
+      }),
+  });
 
-    async function loadHistory() {
-      try {
-        setLoading(true);
-        const response = await getAiSessions({
-          lang: locale,
-          page,
-          limit: 10,
-          q: debouncedSearch || undefined,
-        });
-        if (cancelled) return;
+  const items = useMemo<HistoryItem[]>(
+    () =>
+      (historyQuery.data?.items ?? []).map((session) => {
+        const equipmentName = session.title?.trim() || `Session #${session.id}`;
+        const category = session.primaryMuscle?.trim() || 'AI';
+        const d = new Date(session.createdAt);
+        return {
+          id: session.id,
+          name: equipmentName,
+          category,
+          date: d.toLocaleDateString(locale),
+          time: d.toLocaleTimeString(locale, {
+            hour: '2-digit',
+            minute: '2-digit',
+          }),
+          imageUrl: uploadsUrl(session.imageUrl ?? null),
+        };
+      }),
+    [historyQuery.data, locale],
+  );
 
-        const nextItems: HistoryItem[] = response.items.map((session) => {
-          const equipmentName =
-            session.title?.trim() || `Session #${session.id}`;
-          const category = session.primaryMuscle?.trim() || 'AI';
-          const d = new Date(session.createdAt);
-          return {
-            id: session.id,
-            name: equipmentName,
-            category,
-            date: d.toLocaleDateString(locale),
-            time: d.toLocaleTimeString(locale, {
-              hour: '2-digit',
-              minute: '2-digit',
-            }),
-            imageUrl: uploadsUrl(session.imageUrl ?? null),
-          };
-        });
-        setItems(nextItems);
-        setTotal(response.meta.total ?? nextItems.length);
-        setTotalPages(response.meta.totalPages ?? 1);
-      } catch (err) {
-        toast.error(getApiErrorMessage(err));
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
+  const total = historyQuery.data?.meta.total ?? items.length;
+  const totalPages = historyQuery.data?.meta.totalPages ?? 1;
+  const loading = historyQuery.isPending;
 
-    loadHistory();
-    return () => {
-      cancelled = true;
-    };
-  }, [debouncedSearch, locale, page]);
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => deleteAiSession(id, { lang: locale }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ai-sessions'] });
+    },
+    onError: (err) => {
+      toast.error(getApiErrorMessage(err));
+    },
+  });
 
   const handleDelete = async (id: number) => {
-    if (deletingId) return;
-    try {
-      setDeletingId(id);
-      await deleteAiSession(id, { lang: locale });
-      setItems((prev) => prev.filter((x) => x.id !== id));
-      setTotal((prev) => Math.max(0, prev - 1));
-    } catch (err) {
-      toast.error(getApiErrorMessage(err));
-    } finally {
-      setDeletingId(null);
-    }
+    if (deleteMutation.isPending) return;
+    await deleteMutation.mutateAsync(id);
   };
 
   return (
@@ -152,7 +141,7 @@ export function HistoryPage() {
             <Input
               type='text'
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => handleSearchChange(e.target.value)}
               placeholder={t('searchPlaceholder')}
               className='pr-4 pl-10'
             />
@@ -211,7 +200,7 @@ export function HistoryPage() {
                     icon={<Trash2 className='h-4 w-4' />}
                     variant='ghost'
                     size='sm'
-                    disabled={deletingId === item.id}
+                    disabled={deleteMutation.isPending}
                     className='rounded-lg opacity-100 hover:bg-destructive/10 hover:text-destructive sm:opacity-0 sm:group-hover:opacity-100'
                     aria-label={t('delete')}
                   />

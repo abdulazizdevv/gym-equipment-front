@@ -6,6 +6,7 @@ import { Inter, Space_Grotesk } from "next/font/google";
 import type { ReactNode } from "react";
 
 import { Providers } from "@/components/providers";
+import { SetHtmlLang } from "@/components/set-html-lang";
 import { routing } from "@/i18n/routing";
 
 const inter = Inter({
@@ -46,14 +47,13 @@ export default async function LocaleLayout({ children, params }: Props) {
   const messages = await getMessages();
 
   return (
-    <html lang={locale} suppressHydrationWarning className="h-full">
-      <body
-        className={`${inter.variable} ${spaceGrotesk.variable} font-body flex min-h-full flex-col pb-[env(safe-area-inset-bottom)] antialiased`}
-      >
-        <NextIntlClientProvider messages={messages}>
-          <Providers>{children}</Providers>
-        </NextIntlClientProvider>
-      </body>
-    </html>
+    <div
+      className={`${inter.variable} ${spaceGrotesk.variable} font-body flex min-h-full flex-col pb-[env(safe-area-inset-bottom)] antialiased`}
+    >
+      <SetHtmlLang locale={locale} />
+      <NextIntlClientProvider messages={messages}>
+        <Providers>{children}</Providers>
+      </NextIntlClientProvider>
+    </div>
   );
 }

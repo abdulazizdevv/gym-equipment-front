@@ -101,6 +101,7 @@
     "delete": "Delete"
   },
   "Result": {
+    "title": "Analysis result",
     "back": "Back",
     "aiDetected": "AI detected",
     "confidence": "Confidence: {value}",
