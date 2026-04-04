@@ -30,29 +30,29 @@ export const useAuthStore = create<AuthState>()(
         set({ token })
         if (typeof window !== "undefined") {
           if (token)
-            document.cookie = `gymai_auth_token=${token}; path=/; max-age=2592000; samesite=lax`
+            document.cookie = `muskul_auth_token=${token}; path=/; max-age=2592000; samesite=lax`
           else
             document.cookie =
-              "gymai_auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT"
+              "muskul_auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT"
         }
       },
       setUser: (user) => set({ user }),
       setAuth: ({ token, user }) => {
         set({ token, user })
         if (typeof window !== "undefined") {
-          document.cookie = `gymai_auth_token=${token}; path=/; max-age=2592000; samesite=lax`
+          document.cookie = `muskul_auth_token=${token}; path=/; max-age=2592000; samesite=lax`
         }
       },
       logout: () => {
         set({ token: null, user: null })
         if (typeof window !== "undefined") {
           document.cookie =
-            "gymai_auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT"
+            "muskul_auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT"
         }
       },
     }),
     {
-      name: "gymai_auth",
+      name: "muskul_auth",
       storage: createJSONStorage(() =>
         typeof window !== "undefined"
           ? window.localStorage

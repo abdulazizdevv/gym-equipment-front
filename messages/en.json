@@ -1,6 +1,6 @@
 {
   "Metadata": {
-    "title": "GymAI — analyze gym equipment with AI",
+    "title": "Muskul — analyze gym equipment with AI",
     "description": "Upload a photo — AI identifies the machine, explains how to use it, and shows which muscles it targets."
   },
   "Common": {
@@ -10,7 +10,8 @@
     "logout": "Log out",
     "history": "History",
     "search": "Search…",
-    "copyright": "© {year} GymAI. All rights reserved. — by Abdulaziz"
+    "copyright": "© {year} Muskul. All rights reserved.",
+    "dashboard": "Dashboard"
   },
   "LocaleSwitcher": {
     "label": "Language",
@@ -28,7 +29,7 @@
     "heroSubtitle": "Upload a photo — AI identifies the machine, teaches you how to use it, and shows which muscles you train.",
     "ctaFree": "Start for free",
     "ctaDemo": "View demo",
-    "mockWindow": "GymAI Dashboard",
+    "mockWindow": "Muskul Dashboard",
     "mockUploadHint": "Drop your gym equipment photo here",
     "mockUploadBtn": "Upload photo",
     "mockResultLabel": "AI analysis result",
@@ -51,7 +52,8 @@
     "feature4Desc": "Tips for effective training on this machine",
     "ctaBannerTitle": "Try it now",
     "ctaBannerDesc": "Sign up and upload your gym equipment photo — AI explains everything",
-    "ctaBannerBtn": "Sign up for free"
+    "ctaBannerBtn": "Sign up for free",
+    "goToDashboard": "Go to Dashboard"
   },
   "Auth": {
     "sideTitle": "Learn gym machines with AI",
@@ -126,6 +128,10 @@
     "secondaryMuscles": "Secondary muscles",
     "tips": "Tips",
     "newAnalysis": "New analysis",
+    "noAiImageText": "AI hasn't generated an image for this equipment yet. You can generate one using the button below.",
+    "generateImageBtn": "Generate AI Image",
+    "generating": "Generating...",
+    "generateSuccess": "Image generated successfully!",
     "mock": {
       "name": "Lat Pulldown Machine",
       "nameLocal": "Lat Pulldown",

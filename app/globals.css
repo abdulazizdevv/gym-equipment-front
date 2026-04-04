@@ -72,6 +72,10 @@
     @apply bg-background text-foreground antialiased;
   }
 
+  a, button {
+    cursor: pointer !important;
+  }
+
   h1,
   h2,
   h3,

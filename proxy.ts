@@ -5,7 +5,7 @@ import { routing } from "./i18n/routing"
 const intlMiddleware = createMiddleware(routing)
 
 export default function middleware(req: NextRequest) {
-  const token = req.cookies.get("gymai_auth_token")
+  const token = req.cookies.get("muskul_auth_token")
 
   const protectedPaths = ["/dashboard", "/history", "/result"]
   const pathname = req.nextUrl.pathname

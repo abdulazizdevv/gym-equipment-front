@@ -1,42 +1,54 @@
-"use client";
+"use client"
 
-import { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
-import { useTranslations } from "next-intl";
-import { Dumbbell, Eye, EyeOff, Mail, Lock, User, ArrowRight } from "lucide-react";
-import { toast } from "sonner";
+import { useState, useEffect } from "react"
+import { useSearchParams } from "next/navigation"
+import { useTranslations } from "next-intl"
+import {
+  Dumbbell,
+  Eye,
+  EyeOff,
+  Mail,
+  Lock,
+  User,
+  ArrowRight,
+} from "lucide-react"
+import { toast } from "sonner"
 
-import { LocaleSwitcher } from "@/components/locale-switcher";
-import { Button } from "@/components/ui/button";
-import { IconButton } from "@/components/ui/icon-button";
-import { Input } from "@/components/ui/input";
-import { Link, useRouter } from "@/i18n/navigation";
-import { loginLocal, registerLocal } from "@/lib/api/auth";
-import { getApiErrorMessage } from "@/lib/api/http";
-import { useAuthStore } from "@/stores/auth";
+import { LocaleSwitcher } from "@/components/locale-switcher"
+import { Button } from "@/components/ui/button"
+import { IconButton } from "@/components/ui/icon-button"
+import { Input } from "@/components/ui/input"
+import { Link, useRouter } from "@/i18n/navigation"
+import { loginLocal, registerLocal } from "@/lib/api/auth"
+import { getApiErrorMessage } from "@/lib/api/http"
+import { useAuthStore } from "@/stores/auth"
 
 export function AuthPage() {
-  const t = useTranslations("Auth");
-  const router = useRouter();
-  const setAuth = useAuthStore((s) => s.setAuth);
-  const searchParams = useSearchParams();
-  const mode = searchParams.get("mode");
-  const [isSignup, setIsSignup] = useState(mode === "signup");
-  const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({ name: "", email: "", password: "" });
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const t = useTranslations("Auth")
+  const router = useRouter()
+  const setAuth = useAuthStore((s) => s.setAuth)
+  const searchParams = useSearchParams()
+  const mode = searchParams.get("mode")
+  const [isSignup, setIsSignup] = useState(mode === "signup")
+  const [showPassword, setShowPassword] = useState(false)
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+  })
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
-    setIsSignup(mode === "signup");
-  }, [mode]);
+    setIsSignup(mode === "signup")
+  }, [mode])
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (isSubmitting) return;
+    e.preventDefault()
+    if (isSubmitting) return
 
     try {
-      setIsSubmitting(true);
-      const email = formData.email.trim();
+      setIsSubmitting(true)
+      const email = formData.email.trim()
 
       const res = isSignup
         ? await registerLocal({
@@ -47,19 +59,19 @@ export function AuthPage() {
         : await loginLocal({
             email,
             password: formData.password,
-          });
+          })
 
-      setAuth({ token: res.token, user: res.user });
-      toast.success(res.message || "Success");
-      router.push("/dashboard");
+      setAuth({ token: res.token, user: res.user })
+      toast.success(res.message || "Success")
+      router.push("/dashboard")
     } catch (err) {
-      toast.error(getApiErrorMessage(err));
+      toast.error(getApiErrorMessage(err))
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false)
     }
-  };
+  }
 
-  const bullets = [t("bullet1"), t("bullet2"), t("bullet3")];
+  const bullets = [t("bullet1"), t("bullet2"), t("bullet3")]
 
   return (
     <div className="gradient-mesh flex min-h-screen bg-background">
@@ -76,13 +88,17 @@ export function AuthPage() {
               <Dumbbell className="h-5 w-5 text-primary" />
             </div>
             <span className="font-display text-2xl font-bold text-foreground">
-              Gym<span className="text-primary">AI</span>
+              Mus<span className="text-primary">kul</span>
             </span>
           </Link>
 
           <div className="space-y-4">
-            <h2 className="font-display text-3xl font-bold text-foreground">{t("sideTitle")}</h2>
-            <p className="leading-relaxed text-muted-foreground">{t("sideSubtitle")}</p>
+            <h2 className="font-display text-3xl font-bold text-foreground">
+              {t("sideTitle")}
+            </h2>
+            <p className="leading-relaxed text-muted-foreground">
+              {t("sideSubtitle")}
+            </p>
           </div>
 
           <div className="space-y-4">
@@ -107,7 +123,7 @@ export function AuthPage() {
                 <Dumbbell className="h-5 w-5 text-primary" />
               </div>
               <span className="font-display text-2xl font-bold text-foreground">
-                Gym<span className="text-primary">AI</span>
+                Mus<span className="text-primary">kul</span>
               </span>
             </Link>
           </div>
@@ -124,14 +140,18 @@ export function AuthPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             {isSignup && (
               <div className="space-y-1.5">
-                <label className="text-xs font-medium tracking-wider text-muted-foreground uppercase">{t("name")}</label>
+                <label className="text-xs font-medium tracking-wider text-muted-foreground uppercase">
+                  {t("name")}
+                </label>
                 <div className="relative">
                   <User className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     type="text"
                     placeholder={t("namePlaceholder")}
                     value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
                     className="pl-10 pr-4"
                   />
                 </div>
@@ -139,34 +159,48 @@ export function AuthPage() {
             )}
 
             <div className="space-y-1.5">
-              <label className="text-xs font-medium tracking-wider text-muted-foreground uppercase">{t("email")}</label>
+              <label className="text-xs font-medium tracking-wider text-muted-foreground uppercase">
+                {t("email")}
+              </label>
               <div className="relative">
                 <Mail className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   type="email"
                   placeholder="email@example.com"
                   value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
                   className="pl-10 pr-4"
                 />
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-medium tracking-wider text-muted-foreground uppercase">{t("password")}</label>
+              <label className="text-xs font-medium tracking-wider text-muted-foreground uppercase">
+                {t("password")}
+              </label>
               <div className="relative">
                 <Lock className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
                   value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, password: e.target.value })
+                  }
                   className="pl-10 pr-10"
                 />
                 <IconButton
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  icon={showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  icon={
+                    showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )
+                  }
                   variant="ghost"
                   size="sm"
                   className="absolute top-1/2 right-2 -translate-y-1/2"
@@ -175,7 +209,13 @@ export function AuthPage() {
               </div>
             </div>
 
-            <Button type="submit" variant="primary" size="lg" className="w-full" disabled={isSubmitting}>
+            <Button
+              type="submit"
+              variant="primary"
+              size="lg"
+              className="w-full"
+              disabled={isSubmitting}
+            >
               {isSignup ? t("submitSignUp") : t("submitSignIn")}
               <ArrowRight className="h-4 w-4" />
             </Button>
@@ -187,7 +227,12 @@ export function AuthPage() {
             <div className="h-px flex-1 bg-border" />
           </div>
 
-          <Button type="button" variant="outline" size="lg" className="w-full gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            size="lg"
+            className="w-full gap-3"
+          >
             <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none">
               <path
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"
@@ -211,12 +256,16 @@ export function AuthPage() {
 
           <p className="text-center text-sm text-muted-foreground">
             {isSignup ? t("hasAccount") : t("noAccount")}{" "}
-            <button type="button" onClick={() => setIsSignup(!isSignup)} className="font-medium text-primary hover:underline">
+            <button
+              type="button"
+              onClick={() => setIsSignup(!isSignup)}
+              className="font-medium text-primary hover:underline"
+            >
               {isSignup ? t("linkSignIn") : t("linkSignUp")}
             </button>
           </p>
         </div>
       </div>
     </div>
-  );
+  )
 }

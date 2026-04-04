@@ -32,7 +32,7 @@ http.interceptors.response.use(
     if (error.response?.status === 401) {
       useAuthStore.getState().logout()
       if (typeof window !== "undefined") {
-        window.localStorage.removeItem("gymai_auth")
+        window.localStorage.removeItem("muskul_auth")
         window.location.href = "/"
       }
     }

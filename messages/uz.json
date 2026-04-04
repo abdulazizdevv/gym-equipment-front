@@ -1,6 +1,6 @@
 {
   "Metadata": {
-    "title": "GymAI — gym apparatlarini AI bilan tahlil qiling",
+    "title": "Muskul — gym apparatlarini AI bilan tahlil qiling",
     "description": "Rasm yuklang — sun'iy intellekt apparatni aniqlaydi, qanday foydalanishni o'rgatadi va qaysi muskullarni ishlatishini ko'rsatadi."
   },
   "Common": {
@@ -10,7 +10,8 @@
     "logout": "Chiqish",
     "history": "Tarix",
     "search": "Qidirish…",
-    "copyright": "© {year} GymAI. Barcha huquqlar himoyalangan. — by Abdulaziz"
+    "copyright": "© {year} Muskul. Barcha huquqlar himoyalangan.",
+    "dashboard": "Shaxsiy kabinet"
   },
   "LocaleSwitcher": {
     "label": "Til",
@@ -28,7 +29,7 @@
     "heroSubtitle": "Rasm yuklang — sun'iy intellekt apparatni aniqlaydi, qanday foydalanishni o'rgatadi va qaysi muskullarni ishlatishini ko'rsatadi.",
     "ctaFree": "Bepul boshlash",
     "ctaDemo": "Demo ko'rish",
-    "mockWindow": "GymAI Dashboard",
+    "mockWindow": "Muskul - Shaxsiy kabinet",
     "mockUploadHint": "Gym apparat rasmini shu yerga tashlang",
     "mockUploadBtn": "Rasm yuklash",
     "mockResultLabel": "AI tahlil natijasi",
@@ -51,7 +52,8 @@
     "feature4Desc": "Apparat bilan samarali mashq qilish bo'yicha tavsiyalar",
     "ctaBannerTitle": "Hoziroq sinab ko'ring",
     "ctaBannerDesc": "Ro'yxatdan o'ting va gym apparatingiz rasmini yuklang — AI hamma narsani tushuntiradi",
-    "ctaBannerBtn": "Bepul ro'yxatdan o'tish"
+    "ctaBannerBtn": "Bepul ro'yxatdan o'tish",
+    "goToDashboard": "Shaxsiy kabinetga o'tish"
   },
   "Auth": {
     "sideTitle": "AI bilan gym apparatlarini o'rganing",
@@ -109,7 +111,7 @@
     "resultReady": "Natija tayyor",
     "noResult": "Natija yo'q",
     "loading": "Yuklanmoqda…",
-    "openFromDashboard": "Dashboard’dan rasm yuborgandan keyin natijani oching.",
+    "openFromDashboard": "Shaxsiy kabinetdan rasm yuborgandan keyin natijani oching.",
     "detectedEquipment": "Aniqlangan apparat: {name}",
     "musclesShort": "Muskullar",
     "tipsShort": "Maslahatlar",
@@ -126,6 +128,10 @@
     "secondaryMuscles": "Yordamchi muskullar",
     "tips": "Maslahatlar",
     "newAnalysis": "Yangi tahlil qilish",
+    "noAiImageText": "AI hozircha ushbu uskuna haqida rasm yaratmagan. Quyidagi tugma orqali rasm generatsiya qilishingiz mumkin.",
+    "generateImageBtn": "AI rasm generatsiya qilish",
+    "generating": "Yaratilmoqda...",
+    "generateSuccess": "Rasm muvaffaqiyatli yaratildi!",
     "mock": {
       "name": "Lat Pulldown Machine",
       "nameLocal": "Lat Pulldown Mashinasi",

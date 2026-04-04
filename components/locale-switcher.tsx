@@ -1,67 +1,74 @@
-"use client";
+"use client"
 
-import { useEffect, useState, useSyncExternalStore } from "react";
-import { createPortal } from "react-dom";
-import { Check, ChevronDown, ChevronRight, Globe, Languages, X } from "lucide-react";
-import { useLocale, useTranslations } from "next-intl";
+import { useEffect, useState, useSyncExternalStore } from "react"
+import { createPortal } from "react-dom"
+import {
+  Check,
+  ChevronDown,
+  ChevronRight,
+  Globe,
+  Languages,
+  X,
+} from "lucide-react"
+import { useLocale, useTranslations } from "next-intl"
 
-import { usePathname, useRouter } from "@/i18n/navigation";
-import { routing } from "@/i18n/routing";
-import { cn } from "@/lib/utils";
+import { usePathname, useRouter } from "@/i18n/navigation"
+import { routing } from "@/i18n/routing"
+import { cn } from "@/lib/utils"
 
 const LOCALE_CODE: Record<(typeof routing.locales)[number], string> = {
   en: "EN",
   ru: "RU",
   uz: "UZ",
-};
+}
 
 type LocaleSwitcherProps = {
-  className?: string;
-};
+  className?: string
+}
 
 export function LocaleSwitcher({ className }: LocaleSwitcherProps) {
-  const t = useTranslations("LocaleSwitcher");
-  const locale = useLocale() as (typeof routing.locales)[number];
-  const router = useRouter();
-  const pathname = usePathname();
-  const [open, setOpen] = useState(false);
+  const t = useTranslations("LocaleSwitcher")
+  const locale = useLocale() as (typeof routing.locales)[number]
+  const router = useRouter()
+  const pathname = usePathname()
+  const [open, setOpen] = useState(false)
   const mounted = useSyncExternalStore(
     () => () => {},
     () => true,
     () => false,
-  );
+  )
 
   useEffect(() => {
-    if (!open) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    if (!open) return
+    const prev = document.body.style.overflow
+    document.body.style.overflow = "hidden"
     return () => {
-      document.body.style.overflow = prev;
-    };
-  }, [open]);
+      document.body.style.overflow = prev
+    }
+  }, [open])
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) return
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open]);
+      if (e.key === "Escape") setOpen(false)
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [open])
 
   useEffect(() => {
-    const mq = window.matchMedia("(min-width: 640px)");
+    const mq = window.matchMedia("(min-width: 640px)")
     const closeOnDesktop = () => {
-      if (mq.matches) setOpen(false);
-    };
-    mq.addEventListener("change", closeOnDesktop);
-    return () => mq.removeEventListener("change", closeOnDesktop);
-  }, []);
+      if (mq.matches) setOpen(false)
+    }
+    mq.addEventListener("change", closeOnDesktop)
+    return () => mq.removeEventListener("change", closeOnDesktop)
+  }, [])
 
   const selectLocale = (loc: string) => {
-    router.replace(pathname, { locale: loc });
-    setOpen(false);
-  };
+    router.replace(pathname, { locale: loc })
+    setOpen(false)
+  }
 
   const mobileSheet =
     open &&
@@ -81,13 +88,21 @@ export function LocaleSwitcher({ className }: LocaleSwitcherProps) {
           className="fixed right-0 bottom-0 left-0 z-[201] max-h-[min(85vh,32rem)] animate-in slide-in-from-bottom-4 fade-in duration-300"
         >
           <div className="rounded-t-3xl border border-border border-b-0 bg-card/95 px-4 pt-3 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-[0_-8px_40px_rgba(0,0,0,0.35)] backdrop-blur-xl">
-            <div className="mx-auto mb-3 h-1 w-10 shrink-0 rounded-full bg-muted-foreground/35" aria-hidden />
+            <div
+              className="mx-auto mb-3 h-1 w-10 shrink-0 rounded-full bg-muted-foreground/35"
+              aria-hidden
+            />
             <div className="mb-4 flex items-center justify-between gap-3">
               <div className="min-w-0">
-                <p id="locale-sheet-title" className="font-display text-lg font-semibold text-foreground">
+                <p
+                  id="locale-sheet-title"
+                  className="font-display text-lg font-semibold text-foreground"
+                >
                   {t("label")}
                 </p>
-                <p className="text-xs text-muted-foreground">{t("sheetHint")}</p>
+                <p className="text-xs text-muted-foreground">
+                  {t("sheetHint")}
+                </p>
               </div>
               <button
                 type="button"
@@ -100,7 +115,7 @@ export function LocaleSwitcher({ className }: LocaleSwitcherProps) {
             </div>
             <div className="flex max-h-[min(55vh,22rem)] flex-col gap-2 overflow-y-auto overscroll-contain pb-1">
               {routing.locales.map((loc) => {
-                const active = locale === loc;
+                const active = locale === loc
                 return (
                   <button
                     key={loc}
@@ -114,26 +129,39 @@ export function LocaleSwitcher({ className }: LocaleSwitcherProps) {
                     )}
                   >
                     <div className="min-w-0 flex-1">
-                      <div className="font-display text-base font-semibold text-foreground">{t(loc)}</div>
-                      <div className="mt-0.5 font-mono text-xs text-muted-foreground">{LOCALE_CODE[loc]}</div>
+                      <div className="font-display text-base font-semibold text-foreground">
+                        {t(loc)}
+                      </div>
+                      <div className="mt-0.5 font-mono text-xs text-muted-foreground">
+                        {LOCALE_CODE[loc]}
+                      </div>
                     </div>
                     {active ? (
-                      <Check className="h-6 w-6 shrink-0 text-primary" strokeWidth={2.5} aria-hidden />
+                      <Check
+                        className="h-6 w-6 shrink-0 text-primary"
+                        strokeWidth={2.5}
+                        aria-hidden
+                      />
                     ) : (
-                      <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground/45" aria-hidden />
+                      <ChevronRight
+                        className="h-5 w-5 shrink-0 text-muted-foreground/45"
+                        aria-hidden
+                      />
                     )}
                   </button>
-                );
+                )
               })}
             </div>
           </div>
         </div>
       </>,
       document.body,
-    );
+    )
 
   return (
-    <div className={cn("inline-flex max-w-full min-w-0 items-center", className)}>
+    <div
+      className={cn("inline-flex max-w-full min-w-0 items-center", className)}
+    >
       <span className="sr-only">{t("label")}</span>
 
       {/* Mobile: globus + joriy kod, sheet orqali tanlash */}
@@ -143,10 +171,12 @@ export function LocaleSwitcher({ className }: LocaleSwitcherProps) {
           onClick={() => setOpen(true)}
           aria-expanded={open}
           aria-haspopup="dialog"
-          className="flex h-11 min-w-[3.25rem] items-center justify-center gap-1.5 rounded-xl border border-border bg-secondary/90 px-2.5 shadow-sm backdrop-blur-sm transition-all touch-manipulation active:scale-[0.98] hover:border-primary/40 hover:bg-secondary"
+          className="flex h-9 min-w-[2.75rem] items-center justify-center gap-1.5 rounded-lg border border-border bg-secondary/90 px-2 shadow-sm backdrop-blur-sm transition-all touch-manipulation active:scale-[0.98] hover:border-primary/40 hover:bg-secondary"
         >
-          <Globe className="h-[18px] w-[18px] shrink-0 text-primary" aria-hidden />
-          <span className="font-display text-[11px] font-bold tracking-wider text-primary">{LOCALE_CODE[locale]}</span>
+          <Globe className="h-4 w-4 shrink-0 text-primary" aria-hidden />
+          <span className="font-display text-[10px] font-bold tracking-wider text-primary">
+            {LOCALE_CODE[locale]}
+          </span>
         </button>
         {mobileSheet}
       </div>
@@ -177,5 +207,5 @@ export function LocaleSwitcher({ className }: LocaleSwitcherProps) {
         </div>
       </div>
     </div>
-  );
+  )
 }
