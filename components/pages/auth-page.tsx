@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
 import { useTranslations } from "next-intl"
 import {
-  Dumbbell,
+  BicepsFlexed,
   Eye,
   EyeOff,
   Mail,
@@ -85,7 +85,7 @@ export function AuthPage() {
         <div className="relative z-10 max-w-md space-y-8 p-12">
           <Link href="/" className="flex items-center gap-2">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/20">
-              <Dumbbell className="h-5 w-5 text-primary" />
+              <BicepsFlexed className="h-5 w-5 text-primary" />
             </div>
             <span className="font-display text-2xl font-bold text-foreground">
               Mus<span className="text-primary">kul</span>
@@ -120,7 +120,7 @@ export function AuthPage() {
           <div className="flex justify-center lg:hidden">
             <Link href="/" className="flex items-center gap-2">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/20">
-                <Dumbbell className="h-5 w-5 text-primary" />
+                <BicepsFlexed className="h-5 w-5 text-primary" />
               </div>
               <span className="font-display text-2xl font-bold text-foreground">
                 Mus<span className="text-primary">kul</span>

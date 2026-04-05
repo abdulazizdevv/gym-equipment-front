@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useLocale, useTranslations } from "next-intl"
-import { Dumbbell, ArrowLeft, Search, Trash2 } from "lucide-react"
+import { BicepsFlexed, ArrowLeft, Search, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 
 import { Input } from "@/components/ui/input"
@@ -107,7 +107,7 @@ export function HistoryPage() {
         <div className="container mx-auto flex min-h-14 items-center justify-between gap-2 px-3 sm:min-h-16 sm:px-4">
           <Link href="/" className="flex min-w-0 shrink-0 items-center gap-2">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/20">
-              <Dumbbell className="h-4 w-4 text-primary" />
+              <BicepsFlexed className="h-4 w-4 text-primary" />
             </div>
             <span className="font-display truncate text-base font-bold text-foreground sm:text-lg">
               Mus<span className="text-primary">kul</span>
@@ -172,7 +172,7 @@ export function HistoryPage() {
                     />
                   ) : (
                     <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-secondary sm:h-14 sm:w-14">
-                      <Dumbbell className="h-5 w-5 text-muted-foreground/30 sm:h-6 sm:w-6" />
+                      <BicepsFlexed className="h-5 w-5 text-muted-foreground/30 sm:h-6 sm:w-6" />
                     </div>
                   )}
                   <div className="min-w-0 flex-1">

@@ -4,7 +4,7 @@ import { useMemo, useRef, useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useLocale, useTranslations } from "next-intl"
 import {
-  Dumbbell,
+  BicepsFlexed,
   Camera,
   X,
   Loader2,
@@ -109,7 +109,7 @@ export function DashboardPage() {
         <div className="container mx-auto flex min-h-14 items-center justify-between gap-2 px-3 sm:min-h-16 sm:px-4">
           <Link href="/" className="flex min-w-0 shrink-0 items-center gap-2">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/20">
-              <Dumbbell className="h-4 w-4 text-primary" />
+              <BicepsFlexed className="h-4 w-4 text-primary" />
             </div>
             <span className="font-display truncate text-base font-bold text-foreground sm:text-lg">
               Mus<span className="text-primary">kul</span>
@@ -269,7 +269,7 @@ export function DashboardPage() {
                         className="h-full w-full object-cover"
                       />
                     ) : (
-                      <Dumbbell className="h-8 w-8 text-muted-foreground/30" />
+                      <BicepsFlexed className="h-8 w-8 text-muted-foreground/30" />
                     )}
                   </div>
                   <div>

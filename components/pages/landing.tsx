@@ -4,7 +4,7 @@ import {
   Zap,
   Target,
   ArrowRight,
-  Dumbbell,
+  BicepsFlexed,
   Brain,
   ChevronRight,
 } from "lucide-react"
@@ -42,7 +42,7 @@ export async function LandingPage() {
         <div className="container mx-auto flex min-h-14 items-center justify-between gap-2 px-3 sm:min-h-16 sm:gap-3 sm:px-4">
           <Link href="/" className="flex min-w-0 shrink-0 items-center gap-2">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/20">
-              <Dumbbell className="h-4 w-4 text-primary" />
+              <BicepsFlexed className="h-4 w-4 text-primary" />
             </div>
             <span className="font-display truncate text-base font-bold text-foreground sm:text-lg">
               Mus<span className="text-primary">kul</span>
@@ -229,7 +229,7 @@ export async function LandingPage() {
       <footer className="border-t border-border py-8">
         <div className="container mx-auto flex flex-col items-center justify-between gap-4 px-4 md:flex-row">
           <div className="flex items-center gap-2">
-            <Dumbbell className="h-4 w-4 text-primary" />
+            <BicepsFlexed className="h-4 w-4 text-primary" />
             <span className="font-display text-sm font-bold text-foreground">
               Mus<span className="text-primary">kul</span>
             </span>
