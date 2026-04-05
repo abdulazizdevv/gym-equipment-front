@@ -86,9 +86,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description,
       images: ["/og-image.png"],
     },
+    verification: {
+      google: "qa0jKkwuh_Sl1Wj0icQqLS9q9cuVl7uUp7X2qLSv8yo",
+    },
     robots: {
       index: true,
       follow: true,
+
       googleBot: {
         index: true,
         follow: true,
