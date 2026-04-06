@@ -60,6 +60,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     authors: [{ name: 'Abdulaziz' }],
     creator: 'Abdulaziz',
     publisher: 'Muskul',
+    icons: {
+      icon: [
+        { url: '/favicon/favicon-96x96.png', sizes: '96x96', type: 'image/png' },
+        { url: '/favicon/favicon.svg', type: 'image/svg+xml' }
+      ],
+      apple: [
+        { url: '/favicon/apple-touch-icon.png' }
+      ]
+    },
+    manifest: '/favicon/site.webmanifest',
     alternates: {
       canonical: `${baseUrl}/${locale}`,
       languages: alternateLanguages,
