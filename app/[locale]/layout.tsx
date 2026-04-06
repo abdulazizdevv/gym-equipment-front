@@ -83,7 +83,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       siteName: 'Muskul',
       images: [
         {
-          url: '/og-image.png',
+          url: `${baseUrl}/og-image.png`,
           width: 1200,
           height: 630,
           alt: 'Muskul - AI Gym Equipment Analyzer',
@@ -94,7 +94,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       card: 'summary_large_image',
       title,
       description,
-      images: ['/og-image.png'],
+      images: [`${baseUrl}/og-image.png`],
     },
     verification: {
       google: 'qa0jKkwuh_Sl1Wj0icQqLS9q9cuVl7uUp7X2qLSv8yo',
