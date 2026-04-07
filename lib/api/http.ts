@@ -25,15 +25,17 @@ http.interceptors.request.use((config) => {
   }
   return config
 })
+import { signOut } from "next-auth/react"
 
 http.interceptors.response.use(
   (r) => r,
-  (error: AxiosError<ApiErrorResponse>) => {
+  async (error: AxiosError<ApiErrorResponse>) => {
     if (error.response?.status === 401) {
       useAuthStore.getState().logout()
       if (typeof window !== "undefined") {
         window.localStorage.removeItem("muskul_auth")
-        window.location.href = "/"
+        // Trigger Next-Auth signOut which also clears cookies and redirects
+        await signOut({ redirect: true, callbackUrl: "/" })
       }
     }
     return Promise.reject(error)

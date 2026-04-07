@@ -22,6 +22,7 @@ import { Link, useRouter } from "@/i18n/navigation"
 import { loginLocal, registerLocal } from "@/lib/api/auth"
 import { getApiErrorMessage } from "@/lib/api/http"
 import { useAuthStore } from "@/stores/auth"
+import { signIn } from "next-auth/react"
 
 export function AuthPage() {
   const t = useTranslations("Auth")
@@ -232,6 +233,11 @@ export function AuthPage() {
             variant="outline"
             size="lg"
             className="w-full gap-3"
+            onClick={() => {
+              // Current path is likely /en/auth or /uz/auth, so we construct the local callback
+              const locale = window.location.pathname.split("/")[1] || "en"
+              signIn("google", { callbackUrl: `/${locale}/auth/google-callback` })
+            }}
           >
             <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none">
               <path

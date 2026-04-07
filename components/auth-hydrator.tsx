@@ -1,16 +1,30 @@
 'use client';
 
 import { useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 
 import { getMe } from '@/lib/api/user';
 import { useAuthStore } from '@/stores/auth';
 
 export function AuthHydrator() {
+  const { data: session } = useSession();
   const token = useAuthStore((s) => s.token);
   const user = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
+  const setAuth = useAuthStore((s) => s.setAuth);
   const logout = useAuthStore((s) => s.logout);
 
+  // Sync NextAuth session to Zustand Store
+  useEffect(() => {
+    if (session?.accessToken && !token) {
+      setAuth({
+        token: session.accessToken as string,
+        user: session.user as any,
+      });
+    }
+  }, [session, token, setAuth]);
+
+  // Existing hydration logic
   useEffect(() => {
     let cancelled = false;
     if (!token) return;
