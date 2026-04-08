@@ -20,7 +20,7 @@ import { HeaderAction, HeaderActionLink } from "@/components/ui/header-action"
 import { IconButton } from "@/components/ui/icon-button"
 import { Link, useRouter } from "@/i18n/navigation"
 import { getAiSessions, postAiEquipmentSearch } from "@/lib/api/ai"
-import { getApiErrorMessage } from "@/lib/api/http"
+import { getApiErrorMessage, getUploadUrl } from "@/lib/api/http"
 import { useAuthStore } from "@/stores/auth"
 import { useAiStore } from "@/stores/ai"
 
@@ -47,9 +47,7 @@ export function DashboardPage() {
       (recentQuery.data?.items ?? []).map((x) => ({
         id: x.id,
         title: x.title?.trim() || `Session #${x.id}`,
-        imageUrl: x.imageUrl
-          ? `${process.env.NEXT_PUBLIC_API_URL ?? ""}${x.imageUrl}`
-          : null,
+        imageUrl: getUploadUrl(x.imageUrl),
         createdAt: x.createdAt,
       })),
     [recentQuery.data],

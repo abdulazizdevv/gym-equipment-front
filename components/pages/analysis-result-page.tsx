@@ -31,7 +31,7 @@ import {
   getLatestSessionPost,
   postAiGenerateImage,
 } from "@/lib/api/ai"
-import { getApiErrorMessage } from "@/lib/api/http"
+import { getApiErrorMessage, getUploadUrl } from "@/lib/api/http"
 import { useAiStore } from "@/stores/ai"
 
 function renderBoldInline(text: string) {
@@ -52,13 +52,6 @@ function renderBoldInline(text: string) {
   )
 }
 
-function uploadsUrl(pathOrUrl: string) {
-  const base = process.env.NEXT_PUBLIC_API_URL ?? ""
-  if (!pathOrUrl) return ""
-  if (pathOrUrl.startsWith("http://") || pathOrUrl.startsWith("https://"))
-    return pathOrUrl
-  return `${base}${pathOrUrl}`
-}
 
 export function AnalysisResultPage() {
   const t = useTranslations("Result")
@@ -130,13 +123,13 @@ export function AnalysisResultPage() {
       ? `${Math.round(analysis.equipment.confidence * 100)}%`
       : null
 
-  const heroSrc = uploadImagePath ? uploadsUrl(uploadImagePath) : ""
+  const heroSrc = uploadImagePath ? getUploadUrl(uploadImagePath) : ""
 
   const galleryImages = useMemo(() => {
     const list = analysis?.images ?? []
     if (!uploadImagePath) return list
-    const uploadAbs = uploadsUrl(uploadImagePath)
-    return list.filter((img) => uploadsUrl(img.url) !== uploadAbs)
+    const uploadAbs = getUploadUrl(uploadImagePath)
+    return list.filter((img) => getUploadUrl(img.url) !== uploadAbs)
   }, [analysis, uploadImagePath])
 
   return (
@@ -244,7 +237,7 @@ export function AnalysisResultPage() {
                       className="overflow-hidden rounded-xl border border-border/60 bg-secondary/30"
                     >
                       <PreviewImage
-                        src={uploadsUrl(image.url)}
+                        src={getUploadUrl(image.url) ?? ""}
                         alt={image.caption || `${equipmentName} ${idx + 1}`}
                         caption={image.caption || `${equipmentName} ${idx + 1}`}
                         className="aspect-video w-full object-cover"

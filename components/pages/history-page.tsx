@@ -12,7 +12,7 @@ import { HeaderActionLink } from "@/components/ui/header-action"
 import { IconButton } from "@/components/ui/icon-button"
 import { Link } from "@/i18n/navigation"
 import { deleteAiSession, getAiSessions } from "@/lib/api/ai"
-import { getApiErrorMessage } from "@/lib/api/http"
+import { getApiErrorMessage, getUploadUrl } from "@/lib/api/http"
 
 type HistoryItem = {
   id: number
@@ -23,13 +23,6 @@ type HistoryItem = {
   imageUrl: string | null
 }
 
-function uploadsUrl(pathOrUrl: string | null) {
-  if (!pathOrUrl) return null
-  if (pathOrUrl.startsWith("http://") || pathOrUrl.startsWith("https://"))
-    return pathOrUrl
-  const base = process.env.NEXT_PUBLIC_API_URL ?? ""
-  return `${base}${pathOrUrl}`
-}
 
 export function HistoryPage() {
   const t = useTranslations("History")
@@ -76,7 +69,7 @@ export function HistoryPage() {
             hour: "2-digit",
             minute: "2-digit",
           }),
-          imageUrl: uploadsUrl(session.imageUrl ?? null),
+          imageUrl: getUploadUrl(session.imageUrl ?? null),
         }
       }),
     [historyQuery.data, locale],

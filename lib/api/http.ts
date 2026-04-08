@@ -51,3 +51,12 @@ export function getApiErrorMessage(error: unknown): string {
   }
   return "Something went wrong."
 }
+
+export function getUploadUrl(pathOrUrl: string | null | undefined): string | null {
+  if (!pathOrUrl) return null
+  if (pathOrUrl.startsWith("http://") || pathOrUrl.startsWith("https://")) {
+    return pathOrUrl
+  }
+  const base = process.env.NEXT_PUBLIC_API_URL ?? ""
+  return `${base}${pathOrUrl}`
+}
