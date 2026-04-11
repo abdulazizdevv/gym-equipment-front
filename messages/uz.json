@@ -131,6 +131,7 @@
     "newAnalysis": "Yangi tahlil qilish",
     "noAiImageText": "AI hozircha ushbu uskuna haqida rasm yaratmagan. Quyidagi tugma orqali rasm generatsiya qilishingiz mumkin.",
     "generateImageBtn": "AI rasm generatsiya qilish",
+    "notGymEquipmentNotice": "Bu uskuna gym apparati sifatida aniqlanmadi, shu sababli rasm generatsiya qilish imkoniyati cheklangan.",
     "generating": "Yaratilmoqda...",
     "generateSuccess": "Rasm muvaffaqiyatli yaratildi!",
     "mock": {

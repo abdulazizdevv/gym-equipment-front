@@ -19,6 +19,7 @@ export type AiImage = {
 }
 
 export type AiSearchData = {
+  isGymEquipment?: boolean
   equipment: AiEquipment
   muscles: string[]
   usage: AiUsage

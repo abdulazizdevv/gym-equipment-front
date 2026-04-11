@@ -93,6 +93,11 @@ export function AnalysisResultPage() {
     }
   }, [sessionQuery.data, sessionId, storeSessionId, storeData])
 
+  const isGymEquipment = useMemo(() => {
+    // Strictly check for false to allow legacy data (undefined)
+    return analysis?.isGymEquipment !== false
+  }, [analysis])
+
   const generateImageMutation = useMutation({
     mutationFn: (args: { sId: number; pId: number }) =>
       postAiGenerateImage({
@@ -253,16 +258,19 @@ export function AnalysisResultPage() {
               ) : (
                 <div className="flex flex-col items-center justify-center space-y-3 rounded-2xl border border-dashed border-border bg-secondary/30 p-6 text-center transition-colors hover:bg-secondary/50">
                   <p className="text-xs leading-relaxed text-muted-foreground max-w-[250px] mx-auto">
-                    {t("noAiImageText")}
+                    {isGymEquipment ? t("noAiImageText") : t("notGymEquipmentNotice")}
                   </p>
                   <Button
                     type="button"
                     variant="primary"
                     onClick={handleGenerateImage}
                     disabled={
-                      generateImageMutation.isPending || !sessionId || !postId
+                      generateImageMutation.isPending || 
+                      !sessionId || 
+                      !postId || 
+                      !isGymEquipment
                     }
-                    className="gap-2 mt-2 h-9 px-4 shadow-sm"
+                    className="gap-2 mt-2 h-9 px-4 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     {generateImageMutation.isPending ? (
                       <Loader2 className="h-4 w-4 animate-spin" />

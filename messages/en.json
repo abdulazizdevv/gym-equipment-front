@@ -131,6 +131,7 @@
     "newAnalysis": "New analysis",
     "noAiImageText": "AI hasn't generated an image for this equipment yet. You can generate one using the button below.",
     "generateImageBtn": "Generate AI Image",
+    "notGymEquipmentNotice": "This device was not identified as a gym machine, so image generation is restricted.",
     "generating": "Generating...",
     "generateSuccess": "Image generated successfully!",
     "mock": {
