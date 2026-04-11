@@ -1,7 +1,18 @@
+import type { Metadata, Viewport } from "next"
 import type { ReactNode } from "react"
 
 import "./globals.css"
 import Script from "next/script"
+
+export const metadata: Metadata = {
+  metadataBase: new URL("https://muskul.fit"),
+}
+
+export const viewport: Viewport = {
+  themeColor: "#050505",
+  width: "device-width",
+  initialScale: 1,
+}
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (

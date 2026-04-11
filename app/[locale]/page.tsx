@@ -1,3 +1,10 @@
-import { LandingPage } from "@/components/pages/landing";
+import { LandingPage } from "@/components/pages/landing"
+import { Metadata } from "next"
 
-export default LandingPage;
+export const metadata: Metadata = {
+  alternates: {
+    canonical: "/",
+  },
+}
+
+export default LandingPage

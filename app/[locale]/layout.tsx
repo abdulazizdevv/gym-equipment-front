@@ -11,6 +11,7 @@ import type { ReactNode } from "react"
 
 import { Providers } from "@/components/providers"
 import { SetHtmlLang } from "@/components/set-html-lang"
+import { JsonLd } from "@/components/seo/json-ld"
 import { routing } from "@/i18n/routing"
 
 const inter = Inter({
@@ -73,13 +74,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     },
     manifest: "/favicon/site.webmanifest",
     alternates: {
-      canonical: `${baseUrl}/${locale}`,
+      canonical: locale === "uz" ? "/" : `/${locale}`,
       languages: alternateLanguages,
     },
     openGraph: {
       type: "website",
       locale,
-      url: `${baseUrl}/${locale}`,
+      url: baseUrl,
       title,
       description,
       siteName: "Muskul",
@@ -131,6 +132,30 @@ export default async function LocaleLayout({ children, params }: Props) {
       className={`${inter.variable} ${spaceGrotesk.variable} font-body flex min-h-full flex-col pb-[env(safe-area-inset-bottom)] antialiased`}
     >
       <SetHtmlLang locale={locale} />
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          name: "Muskul",
+          url: "https://muskul.fit",
+          logo: "https://muskul.fit/favicon/apple-touch-icon.png",
+          description: "AI-powered gym equipment analyzer and workout guide.",
+          sameAs: ["https://t.me/muskul_fit"],
+        }}
+      />
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          name: "Muskul",
+          url: "https://muskul.fit",
+          potentialAction: {
+            "@type": "SearchAction",
+            target: "https://muskul.fit/uz/search?q={search_term_string}",
+            "query-input": "required name=search_term_string",
+          },
+        }}
+      />
       <NextIntlClientProvider messages={messages}>
         <Providers>{children}</Providers>
       </NextIntlClientProvider>
