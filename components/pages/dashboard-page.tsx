@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { signOut } from "next-auth/react"
 import { useLocale, useTranslations } from "next-intl"
 import {
   BicepsFlexed,
@@ -123,9 +124,9 @@ export function DashboardPage() {
             <HeaderAction
               icon={<LogOut className="h-4 w-4 shrink-0" />}
               label={tc("logout")}
-              onClick={() => {
+              onClick={async () => {
                 logout()
-                router.push("/auth")
+                await signOut({ redirect: true, callbackUrl: "/auth" })
               }}
             />
           </div>
