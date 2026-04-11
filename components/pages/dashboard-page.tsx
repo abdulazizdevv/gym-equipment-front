@@ -125,7 +125,7 @@ export function DashboardPage() {
               icon={<LogOut className="h-4 w-4 shrink-0" />}
               label={tc("logout")}
               onClick={async () => {
-                logout()
+                // Only call signOut. AuthHydrator will handle the rest.
                 await signOut({ redirect: true, callbackUrl: "/auth" })
               }}
             />

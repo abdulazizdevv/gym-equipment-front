@@ -21,8 +21,11 @@ export function AuthHydrator() {
         token: session.accessToken as string,
         user: session.user as any,
       });
+    } else if (!session && token) {
+      // Clear store if session is gone but token remains (Sign out sync)
+      logout();
     }
-  }, [session, token, setAuth]);
+  }, [session, token, setAuth, logout]);
 
   // Existing hydration logic
   useEffect(() => {
