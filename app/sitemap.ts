@@ -1,33 +1,24 @@
 import type { MetadataRoute } from "next"
-import { routing } from "@/i18n/routing"
-
-const BASE_URL = "https://muskul.fit"
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const pages = [
-    { url: "", priority: 1, changeFrequency: "daily" as const },
-    { url: "/auth", priority: 0.8, changeFrequency: "monthly" as const },
+  const baseUrl = "https://muskul.fit"
+  const locales = ["en", "ru", "uz"]
+  const routes = [
+    { path: "", priority: 1, changeFrequency: "daily" as const },
+    { path: "/auth", priority: 0.8, changeFrequency: "monthly" as const },
+    { path: "/dashboard", priority: 0.9, changeFrequency: "daily" as const },
+    { path: "/history", priority: 0.7, changeFrequency: "weekly" as const },
   ]
 
   const sitemapEntries: MetadataRoute.Sitemap = []
 
-  pages.forEach((page) => {
-    // Collect all translations first for alternates
-    const languages: Record<string, string> = {}
-    routing.locales.forEach((locale) => {
-      languages[locale] = `${BASE_URL}/${locale}${page.url}`
-    })
-
-    // Create entry per locale for this page
-    routing.locales.forEach((locale) => {
+  locales.forEach((locale) => {
+    routes.forEach((route) => {
       sitemapEntries.push({
-        url: `${BASE_URL}/${locale}${page.url}`,
+        url: `${baseUrl}/${locale}${route.path}`,
         lastModified: new Date(),
-        changeFrequency: page.changeFrequency,
-        priority: page.priority,
-        alternates: {
-          languages,
-        },
+        changeFrequency: route.changeFrequency,
+        priority: route.priority,
       })
     })
   })
