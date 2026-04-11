@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useSearchParams } from "next/navigation"
+import { useParams, useSearchParams } from "next/navigation"
 import { useTranslations } from "next-intl"
 import {
   BicepsFlexed,
@@ -22,11 +22,12 @@ import { Link, useRouter } from "@/i18n/navigation"
 import { loginLocal, registerLocal } from "@/lib/api/auth"
 import { getApiErrorMessage } from "@/lib/api/http"
 import { useAuthStore } from "@/stores/auth"
-import { signIn } from "next-auth/react"
+import { signIn, useSession } from "next-auth/react"
 
 export function AuthPage() {
   const t = useTranslations("Auth")
   const router = useRouter()
+  const params = useParams()
   const setAuth = useAuthStore((s) => s.setAuth)
   const searchParams = useSearchParams()
   const mode = searchParams.get("mode")
@@ -234,9 +235,11 @@ export function AuthPage() {
             size="lg"
             className="w-full gap-3"
             onClick={() => {
-              // Current path is likely /en/auth or /uz/auth, so we construct the local callback
-              const locale = window.location.pathname.split("/")[1] || "en"
-              signIn("google", { callbackUrl: `/${locale}/auth/google-callback` })
+              // Get the current locale from useParams
+              const locale = (params.locale as string) || "en"
+              signIn("google", {
+                callbackUrl: `/${locale}/auth/google-callback`,
+              })
             }}
           >
             <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none">

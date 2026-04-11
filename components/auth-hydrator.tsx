@@ -7,7 +7,7 @@ import { getMe } from '@/lib/api/user';
 import { useAuthStore } from '@/stores/auth';
 
 export function AuthHydrator() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const token = useAuthStore((s) => s.token);
   const user = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
@@ -16,16 +16,16 @@ export function AuthHydrator() {
 
   // Sync NextAuth session to Zustand Store
   useEffect(() => {
-    if (session?.accessToken && !token) {
+    if (status === "authenticated" && session?.accessToken && !token) {
       setAuth({
         token: session.accessToken as string,
         user: session.user as any,
       });
-    } else if (!session && token) {
-      // Clear store if session is gone but token remains (Sign out sync)
+    } else if (status === "unauthenticated" && token) {
+      // Clear store ONLY when confirmed unauthenticated
       logout();
     }
-  }, [session, token, setAuth, logout]);
+  }, [status, session, token, setAuth, logout]);
 
   // Existing hydration logic
   useEffect(() => {
