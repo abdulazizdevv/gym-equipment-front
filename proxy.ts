@@ -10,7 +10,6 @@ export default function middleware(req: NextRequest) {
   const protectedPaths = ["/dashboard", "/history", "/result"]
   const pathname = req.nextUrl.pathname
 
-  // Check if pathname starts with any protected path (or includes locale prefix like /uz/dashboard)
   const isProtected = protectedPaths.some(
     (path) =>
       pathname === path ||
@@ -19,14 +18,17 @@ export default function middleware(req: NextRequest) {
   )
 
   if (isProtected && !token?.value) {
-    const homeUrl = new URL("/", req.url)
-    // Explicitly fallback to root which next-intl redirects properly
+    // 🔥 locale ni olish
+    const segments = pathname.split("/")
+    const locale = segments[1] || "en"
+
+    const homeUrl = new URL(`/${locale}`, req.url)
+
     return NextResponse.redirect(homeUrl)
   }
 
   return intlMiddleware(req)
 }
-
 export const config = {
   matcher: ["/((?!api|_next|_vercel|.*\\..*).*)"],
 }

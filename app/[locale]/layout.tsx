@@ -74,7 +74,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     },
     manifest: "/favicon/site.webmanifest",
     alternates: {
-      canonical: locale === "uz" ? "/" : `/${locale}`,
+      canonical: locale === routing.defaultLocale ? "/" : `/${locale}`,
       languages: alternateLanguages,
     },
     openGraph: {
@@ -151,7 +151,7 @@ export default async function LocaleLayout({ children, params }: Props) {
           url: "https://muskul.fit",
           potentialAction: {
             "@type": "SearchAction",
-            target: "https://muskul.fit/uz/search?q={search_term_string}",
+            target: `https://muskul.fit/${locale === routing.defaultLocale ? "" : locale + "/"}search?q={search_term_string}`,
             "query-input": "required name=search_term_string",
           },
         }}
