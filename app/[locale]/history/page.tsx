@@ -11,6 +11,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const t = await getTranslations({ locale, namespace: "History" })
   return {
     title: t("title"),
+    robots: {
+      index: false,
+      follow: false,
+    },
     alternates: {
       canonical: `/${locale}/history`,
     },

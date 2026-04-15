@@ -1,10 +1,19 @@
 import { LandingPage } from "@/components/pages/landing"
 import { Metadata } from "next"
+import { routing } from "@/i18n/routing"
 
-export const metadata: Metadata = {
-  alternates: {
-    canonical: "/",
-  },
+type Props = {
+  params: Promise<{ locale: string }>
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params
+
+  return {
+    alternates: {
+      canonical: locale === routing.defaultLocale ? "/" : `/${locale}`,
+    },
+  }
 }
 
 export default LandingPage

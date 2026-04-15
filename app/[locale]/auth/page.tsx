@@ -1,6 +1,14 @@
 import { Suspense } from "react";
+import { Metadata } from "next";
 
 import { AuthPage } from "@/components/pages/auth-page";
+
+export const metadata: Metadata = {
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 export default function Auth() {
   return (

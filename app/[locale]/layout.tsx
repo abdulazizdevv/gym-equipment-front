@@ -44,9 +44,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     : "gym equipment analyzer, muskul fit, AI fitness"
 
   const baseUrl = "https://muskul.fit"
+  const localePath = locale === routing.defaultLocale ? "" : `/${locale}`
+  const canonicalUrl = `${baseUrl}${localePath || "/"}`
   const alternateLanguages: Record<string, string> = {}
   routing.locales.forEach((l) => {
-    alternateLanguages[l] = `${baseUrl}/${l}`
+    alternateLanguages[l] =
+      l === routing.defaultLocale ? `${baseUrl}/` : `${baseUrl}/${l}`
   })
 
   return {
@@ -74,13 +77,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     },
     manifest: "/favicon/site.webmanifest",
     alternates: {
-      canonical: locale === routing.defaultLocale ? "/" : `/${locale}`,
-      languages: alternateLanguages,
+      canonical: canonicalUrl,
+      languages: {
+        ...alternateLanguages,
+        "x-default": `${baseUrl}/`,
+      },
     },
     openGraph: {
       type: "website",
       locale,
-      url: baseUrl,
+      url: canonicalUrl,
       title,
       description,
       siteName: "Muskul",
