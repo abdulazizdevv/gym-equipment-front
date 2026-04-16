@@ -7,7 +7,15 @@ const intlMiddleware = createMiddleware(routing)
 export default function middleware(req: NextRequest) {
   const token = req.cookies.get("muskul_auth_token")
 
-  const protectedPaths = ["/dashboard", "/history", "/result"]
+  const protectedPaths = [
+    "/equipment",
+    "/dashboard",
+    "/history",
+    "/result",
+    "/food",
+    "/food/history",
+    "/food/result",
+  ]
   const pathname = req.nextUrl.pathname
 
   const isProtected = protectedPaths.some(

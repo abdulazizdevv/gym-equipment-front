@@ -1,75 +1,31 @@
 "use client"
 
-import { useMemo, useRef, useState } from "react"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { signOut } from "next-auth/react"
-import { useLocale, useTranslations } from "next-intl"
+import { useRef, useState } from "react"
+import { useTranslations } from "next-intl"
 import {
   BicepsFlexed,
-  Camera,
+  UtensilsCrossed,
   X,
   Loader2,
-  LogOut,
-  History,
   Sparkles,
-  UtensilsCrossed,
+  History,
 } from "lucide-react"
-import { toast } from "sonner"
 
 import { LocaleSwitcher } from "@/components/locale-switcher"
 import { Button } from "@/components/ui/button"
-import { HeaderAction, HeaderActionLink } from "@/components/ui/header-action"
+import { HeaderActionLink } from "@/components/ui/header-action"
 import { IconButton } from "@/components/ui/icon-button"
 import { Link, useRouter } from "@/i18n/navigation"
-import { getAiSessions, postAiEquipmentSearch } from "@/lib/api/ai"
-import { getApiErrorMessage, getUploadUrl } from "@/lib/api/http"
-import { useAiStore } from "@/stores/ai"
 
-export function DashboardPage() {
-  const t = useTranslations("Dashboard")
+export function FoodDashboardPage() {
+  const t = useTranslations("FoodDashboard")
   const tc = useTranslations("Common")
-  const locale = useLocale()
   const router = useRouter()
-  const queryClient = useQueryClient()
-  const setAiResult = useAiStore((s) => s.setResult)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
-
-  const recentQuery = useQuery({
-    queryKey: ["ai-sessions-recent", locale],
-    queryFn: () => getAiSessions({ lang: locale, page: 1, limit: 4 }),
-  })
-
-  const recent = useMemo(
-    () =>
-      (recentQuery.data?.items ?? []).map((x) => ({
-        id: x.id,
-        title: x.title?.trim() || `Session #${x.id}`,
-        imageUrl: getUploadUrl(x.imageUrl),
-        createdAt: x.createdAt,
-      })),
-    [recentQuery.data],
-  )
-
-  const analyzeMutation = useMutation({
-    mutationFn: (file: File) =>
-      postAiEquipmentSearch({
-        image: file,
-        lang: locale,
-      }),
-    onSuccess: (res) => {
-      setAiResult({ sessionId: res.sessionId, data: res.data })
-      queryClient.invalidateQueries({
-        queryKey: ["ai-sessions-recent", locale],
-      })
-      router.push(`/result?sessionId=${res.sessionId}`)
-    },
-    onError: (err) => {
-      toast.error(getApiErrorMessage(err))
-    },
-  })
 
   const setImageFile = (file: File | null) => {
     setPreviewUrl((prev) => {
@@ -95,10 +51,12 @@ export function DashboardPage() {
     }
   }
 
-  const handleAnalyze = async () => {
-    if (!selectedFile) return
-    if (analyzeMutation.isPending) return
-    await analyzeMutation.mutateAsync(selectedFile)
+  const handleAnalyze = () => {
+    if (!selectedFile || isAnalyzing) return
+    setIsAnalyzing(true)
+    setTimeout(() => {
+      router.push("/food/result")
+    }, 1400)
   }
 
   return (
@@ -116,22 +74,14 @@ export function DashboardPage() {
           <div className="-mr-1 flex min-w-0 max-w-[min(100%,calc(100vw-5.5rem))] flex-nowrap items-center justify-end gap-1 overflow-x-auto overflow-y-hidden py-0.5 [-webkit-overflow-scrolling:touch] sm:mr-0 sm:max-w-none sm:gap-3 sm:overflow-visible sm:py-0">
             <LocaleSwitcher className="shrink-0" />
             <HeaderActionLink
-              href="/history"
-              icon={<History className="h-4 w-4 shrink-0" />}
-              label={tc("history")}
+              href="/dashboard"
+              icon={<BicepsFlexed className="h-4 w-4 shrink-0" />}
+              label={tc("dashboard")}
             />
             <HeaderActionLink
-              href="/food"
-              icon={<UtensilsCrossed className="h-4 w-4 shrink-0" />}
-              label={tc("food")}
-            />
-            <HeaderAction
-              icon={<LogOut className="h-4 w-4 shrink-0" />}
-              label={tc("logout")}
-              onClick={async () => {
-                // Only call signOut. AuthHydrator will handle the rest.
-                await signOut({ redirect: true, callbackUrl: "/auth" })
-              }}
+              href="/food/history"
+              icon={<History className="h-4 w-4 shrink-0" />}
+              label={tc("history")}
             />
           </div>
         </div>
@@ -140,8 +90,8 @@ export function DashboardPage() {
       <main className="container mx-auto max-w-4xl px-3 py-8 pb-[max(2rem,env(safe-area-inset-bottom))] sm:px-4 sm:py-12">
         <div className="space-y-8">
           <div className="space-y-3 text-center">
-            <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-medium text-primary">
-              <Sparkles className="h-3 w-3" />
+            <div className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/5 px-3 py-1 text-xs font-medium text-accent">
+              <UtensilsCrossed className="h-3 w-3" />
               {t("badge")}
             </div>
             <h1 className="font-display text-2xl font-bold text-foreground sm:text-3xl md:text-4xl">
@@ -161,10 +111,10 @@ export function DashboardPage() {
             onDrop={handleDrop}
             className={`relative overflow-hidden rounded-2xl border-2 border-dashed transition-all duration-300 ${
               previewUrl
-                ? "border-primary/40 bg-primary/5"
+                ? "border-accent/40 bg-accent/5"
                 : isDragging
-                  ? "scale-[1.01] border-primary bg-primary/10"
-                  : "border-border bg-card/50 hover:border-primary/30"
+                  ? "scale-[1.01] border-accent bg-accent/10"
+                  : "border-border bg-card/50 hover:border-accent/30"
             }`}
           >
             {previewUrl ? (
@@ -182,16 +132,16 @@ export function DashboardPage() {
                   variant="glass"
                   size="sm"
                   className="absolute top-4 right-8 sm:right-4"
-                  aria-label="Remove image"
+                  aria-label={t("removeImage")}
                 />
 
-                {analyzeMutation.isPending && (
+                {isAnalyzing && (
                   <div className="absolute inset-0 flex items-center justify-center bg-background/50">
                     <div className="absolute inset-0 overflow-hidden">
-                      <div className="animate-scan h-1 w-full bg-linear-to-r from-transparent via-primary to-transparent" />
+                      <div className="animate-scan h-1 w-full bg-linear-to-r from-transparent via-accent to-transparent" />
                     </div>
                     <div className="glass mx-3 flex max-w-[calc(100%-1.5rem)] items-center gap-2 rounded-xl px-4 py-3 sm:mx-0 sm:max-w-none sm:gap-3 sm:px-6 sm:py-4">
-                      <Loader2 className="h-5 w-5 shrink-0 animate-spin text-primary" />
+                      <Loader2 className="h-5 w-5 shrink-0 animate-spin text-accent" />
                       <span className="font-display text-sm font-medium text-foreground sm:text-base">
                         {t("analyzing")}
                       </span>
@@ -204,16 +154,14 @@ export function DashboardPage() {
                 className="cursor-pointer space-y-4 p-5 text-center sm:space-y-6 sm:p-8 md:p-16"
                 onClick={() => fileInputRef.current?.click()}
               >
-                <div className="animate-float mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 sm:h-20 sm:w-20">
-                  <Camera className="h-8 w-8 text-primary sm:h-10 sm:w-10" />
+                <div className="animate-float mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-accent/10 sm:h-20 sm:w-20">
+                  <UtensilsCrossed className="h-8 w-8 text-accent sm:h-10 sm:w-10" />
                 </div>
                 <div className="space-y-2">
                   <p className="font-display text-base font-semibold text-foreground sm:text-lg">
                     {t("dropTitle")}
                   </p>
-                  <p className="text-sm text-muted-foreground">
-                    {t("dropHint")}
-                  </p>
+                  <p className="text-sm text-muted-foreground">{t("dropHint")}</p>
                 </div>
                 <div className="flex flex-wrap items-center justify-center gap-2 gap-x-4 text-[11px] text-muted-foreground sm:text-xs">
                   <span>{t("formats")}</span>
@@ -231,21 +179,16 @@ export function DashboardPage() {
             />
           </div>
 
-          {selectedFile && (
+          {selectedFile && !isAnalyzing && (
             <div className="text-center">
               <Button
                 type="button"
                 onClick={handleAnalyze}
                 variant="primary"
                 size="lg"
-                disabled={analyzeMutation.isPending}
-                className="group w-full min-h-12 gap-3 text-base sm:w-auto sm:min-h-11 sm:px-10 sm:text-lg"
+                className="group w-full min-h-12 gap-3 bg-accent text-base text-accent-foreground hover:opacity-90 sm:w-auto sm:min-h-11 sm:px-10 sm:text-lg"
               >
-                {analyzeMutation.isPending ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : (
-                  <Sparkles className="h-5 w-5" />
-                )}
+                <Sparkles className="h-5 w-5" />
                 {t("analyzeBtn")}
               </Button>
             </div>
@@ -253,34 +196,25 @@ export function DashboardPage() {
 
           <div className="space-y-4 pt-8">
             <h2 className="font-display flex items-center gap-2 text-lg font-semibold text-foreground">
-              <History className="h-4 w-4 text-primary" />
+              <History className="h-4 w-4 text-accent" />
               {t("recentTitle")}
             </h2>
             <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-              {recent.map((item) => (
+              {[1, 2, 3, 4].map((id) => (
                 <Link
-                  key={item.id}
-                  href={`/result?sessionId=${item.id}`}
-                  className="group space-y-2 rounded-xl glass p-3 transition-colors hover:border-primary/30"
+                  key={id}
+                  href="/food/result"
+                  className="group space-y-2 rounded-xl glass p-3 transition-colors hover:border-accent/30"
                 >
                   <div className="flex aspect-square items-center justify-center overflow-hidden rounded-lg bg-secondary">
-                    {item.imageUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element -- backend-hosted upload preview
-                      <img
-                        src={item.imageUrl}
-                        alt={item.title}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <BicepsFlexed className="h-8 w-8 text-muted-foreground/30" />
-                    )}
+                    <UtensilsCrossed className="h-8 w-8 text-muted-foreground/30" />
                   </div>
                   <div>
-                    <p className="truncate text-xs font-medium text-foreground transition-colors group-hover:text-primary">
-                      {item.title}
+                    <p className="truncate text-xs font-medium text-foreground transition-colors group-hover:text-accent">
+                      {t("dishTitle", { id })}
                     </p>
                     <p className="text-[10px] text-muted-foreground">
-                      {new Date(item.createdAt).toLocaleDateString(locale)}
+                      {t("hoursAgo")}
                     </p>
                   </div>
                 </Link>
