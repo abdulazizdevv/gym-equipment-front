@@ -227,13 +227,39 @@ export async function deleteAiSession(id: number, options?: AiLangOptions) {
   return data
 }
 
-export async function postAiGenerateImage(
-  payload: { sessionId: number; postId: number } & AiLangOptions,
-) {
-  const { data } = await http.post<{ message: string }>(
-    `/ai/sessions/${payload.sessionId}/posts/${payload.postId}/generate-image`,
-    {},
-    { headers: withLangHeaders(payload.lang) },
+/** Admin: Manual GIF upload */
+export async function postAdminUpsertGif(payload: {
+  equipmentName: string
+  gifs: File[]
+  captions?: string[]
+  muscles?: string[]
+  aliases?: string[]
+}) {
+  const form = new FormData()
+  form.append("equipmentName", payload.equipmentName)
+  payload.gifs.forEach((file) => {
+    form.append("gifs", file)
+  })
+  if (payload.captions) {
+    form.append("captions", JSON.stringify(payload.captions))
+  }
+  if (payload.muscles) {
+    form.append("targetMuscles", JSON.stringify(payload.muscles))
+  }
+  if (payload.aliases) {
+    form.append("alternativeNames", JSON.stringify(payload.aliases))
+  }
+
+  const { data } = await http.post<{ message: string; count: number }>(
+    "/admin/equipment-gifs",
+    form,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    },
   )
   return data
 }
+
+

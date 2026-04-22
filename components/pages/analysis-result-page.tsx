@@ -1,9 +1,9 @@
-"use client"
+'use client'
 
-import { useMemo } from "react"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { useLocale, useTranslations } from "next-intl"
-import { useSearchParams } from "next/navigation"
+import { useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { useLocale, useTranslations } from 'next-intl'
+import { useSearchParams } from 'next/navigation'
 import {
   BicepsFlexed,
   ArrowLeft,
@@ -14,28 +14,26 @@ import {
   BookOpen,
   Star,
   AlertTriangle,
-  Sparkles,
-  Loader2,
-} from "lucide-react"
-import { toast } from "sonner"
+  Dumbbell,
+} from 'lucide-react'
 
-import { LocaleSwitcher } from "@/components/locale-switcher"
-import { HeaderActionLink } from "@/components/ui/header-action"
-import { PreviewImage } from "@/components/ui/preview-image"
-import { Button } from "@/components/ui/button"
-import { Link } from "@/i18n/navigation"
+import { LocaleSwitcher } from '@/components/locale-switcher'
+import { HeaderActionLink } from '@/components/ui/header-action'
+import { PreviewImage } from '@/components/ui/preview-image'
+import { Link } from '@/i18n/navigation'
 import {
   getAiSessionById,
   getLatestSessionResult,
   getSessionUploadImageUrl,
   getLatestSessionPost,
-  postAiGenerateImage,
-} from "@/lib/api/ai"
-import { getApiErrorMessage, getUploadUrl } from "@/lib/api/http"
-import { useAiStore } from "@/stores/ai"
+} from '@/lib/api/ai'
+import { getApiErrorMessage, getUploadUrl } from '@/lib/api/http'
+import { useAiStore } from '@/stores/ai'
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function renderBoldInline(text: string) {
-  const parts = text.split("**")
+  const parts = text.split('**')
   if (parts.length === 1) return <>{text}</>
   return (
     <>
@@ -52,26 +50,26 @@ function renderBoldInline(text: string) {
   )
 }
 
+// ─── Component ────────────────────────────────────────────────────────────────
 
 export function AnalysisResultPage() {
-  const t = useTranslations("Result")
-  const tc = useTranslations("Common")
+  const t      = useTranslations('Result')
+  const tc     = useTranslations('Common')
   const locale = useLocale()
-  const searchParams = useSearchParams()
-  const sessionIdParam = searchParams.get("sessionId")
-  const sessionId = sessionIdParam ? Number(sessionIdParam) : null
-  const queryClient = useQueryClient()
+
+  const searchParams   = useSearchParams()
+  const sessionIdParam = searchParams.get('sessionId')
+  const sessionId      = sessionIdParam ? Number(sessionIdParam) : null
 
   const storeSessionId = useAiStore((s) => s.sessionId)
-  const storeData = useAiStore((s) => s.data)
+  const storeData      = useAiStore((s) => s.data)
 
+  // ── Data fetching ───────────────────────────────────────────────────────────
   const sessionQuery = useQuery({
-    queryKey: ["ai-session", locale, sessionId],
+    queryKey: ['ai-session', locale, sessionId],
     queryFn: async () => {
-      const session = await getAiSessionById(sessionId as number, {
-        lang: locale,
-      })
-      const result = getLatestSessionResult(session)
+      const session = await getAiSessionById(sessionId as number, { lang: locale })
+      const result  = getLatestSessionResult(session)
       if (result && sessionId) {
         useAiStore.getState().setResult({ sessionId, data: result })
       }
@@ -80,65 +78,41 @@ export function AnalysisResultPage() {
     enabled: Boolean(sessionId),
   })
 
-  const { analysis, uploadImagePath, postId } = useMemo(() => {
-    const session = sessionQuery.data
-    const post = getLatestSessionPost(session)
-    const fromApi = post?.result
+  const { analysis, uploadImagePath } = useMemo(() => {
+    const session  = sessionQuery.data
+    const post     = getLatestSessionPost(session)
+    const fromApi  = post?.result
     const fallback =
       sessionId != null && storeSessionId === sessionId ? storeData : null
     return {
       analysis: fromApi ?? fallback ?? null,
       uploadImagePath: getSessionUploadImageUrl(session),
-      postId: post?.id ?? null,
     }
   }, [sessionQuery.data, sessionId, storeSessionId, storeData])
 
-  const isGymEquipment = useMemo(() => {
-    // Strictly check for false to allow legacy data (undefined)
-    return analysis?.isGymEquipment !== false
-  }, [analysis])
+  // ── Derived values ──────────────────────────────────────────────────────────
+  const isGymEquipment = analysis?.isGymEquipment !== false
 
-  const generateImageMutation = useMutation({
-    mutationFn: (args: { sId: number; pId: number }) =>
-      postAiGenerateImage({
-        sessionId: args.sId,
-        postId: args.pId,
-        lang: locale,
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["ai-session", locale, sessionId],
-      })
-      toast.success(t("generateSuccess"))
-    },
-    onError: (err) => {
-      toast.error(getApiErrorMessage(err))
-    },
-  })
-
-  const handleGenerateImage = () => {
-    if (sessionId && postId) {
-      generateImageMutation.mutate({ sId: sessionId, pId: postId })
-    }
-  }
-
-  const equipmentName = analysis?.equipment?.name ?? t("title")
+  const equipmentName = analysis?.equipment?.name ?? t('title')
   const confidenceText =
-    typeof analysis?.equipment?.confidence === "number"
+    typeof analysis?.equipment?.confidence === 'number'
       ? `${Math.round(analysis.equipment.confidence * 100)}%`
       : null
 
-  const heroSrc = uploadImagePath ? getUploadUrl(uploadImagePath) : ""
+  const heroSrc = uploadImagePath ? getUploadUrl(uploadImagePath) : ''
 
+  // Filter out the user's uploaded image from the GIF gallery
   const galleryImages = useMemo(() => {
-    const list = analysis?.images ?? []
+    const list     = analysis?.images ?? []
     if (!uploadImagePath) return list
     const uploadAbs = getUploadUrl(uploadImagePath)
     return list.filter((img) => getUploadUrl(img.url) !== uploadAbs)
   }, [analysis, uploadImagePath])
 
+  // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <div className="gradient-mesh min-h-screen bg-background">
+      {/* Header */}
       <header className="glass sticky top-0 z-50 pt-[env(safe-area-inset-top)]">
         <div className="container mx-auto flex min-h-14 items-center justify-between gap-2 px-3 sm:min-h-16 sm:px-4">
           <Link href="/" className="flex min-w-0 shrink-0 items-center gap-2">
@@ -154,7 +128,7 @@ export function AnalysisResultPage() {
             <HeaderActionLink
               href="/dashboard"
               icon={<ArrowLeft className="h-4 w-4 shrink-0" />}
-              label={tc("back")}
+              label={tc('back')}
               className="min-w-0 px-1.5 sm:px-2"
             />
           </div>
@@ -163,7 +137,11 @@ export function AnalysisResultPage() {
 
       <main className="container mx-auto max-w-6xl px-3 py-6 sm:px-4 sm:py-8">
         <div className="grid gap-6 sm:gap-8 lg:grid-cols-5">
+
+          {/* ── Left column ─────────────────────────────────────────────────── */}
           <div className="space-y-6 lg:col-span-2">
+
+            {/* Equipment image */}
             <div className="glass overflow-hidden rounded-2xl">
               {heroSrc ? (
                 <PreviewImage
@@ -180,145 +158,119 @@ export function AnalysisResultPage() {
               <div className="space-y-3 p-5">
                 <div className="flex items-center gap-2">
                   <div className="h-2 w-2 animate-pulse rounded-full bg-primary" />
-                  <span className="text-xs font-medium text-primary">
-                    {t("aiDetected")}
-                  </span>
+                  <span className="text-xs font-medium text-primary">{t('aiDetected')}</span>
                 </div>
                 <h1 className="font-display text-2xl font-bold text-foreground">
                   {equipmentName}
                 </h1>
-                {confidenceText ? (
+                {confidenceText && (
                   <p className="text-sm text-muted-foreground">
-                    {t("confidence", { value: confidenceText })}
+                    {t('confidence', { value: confidenceText })}
                   </p>
-                ) : null}
+                )}
                 <div className="flex flex-wrap gap-2 pt-1">
-                  {analysis?.equipment?.name ? (
-                    <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-                      {t("resultReady")}
-                    </span>
-                  ) : (
-                    <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-                      {t("noResult")}
-                    </span>
-                  )}
+                  <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+                    {analysis?.equipment?.name ? t('resultReady') : t('noResult')}
+                  </span>
                 </div>
               </div>
             </div>
 
+            {/* Stats */}
             <div className="grid grid-cols-2 gap-3">
               <div className="glass space-y-1 rounded-xl p-4 text-center">
                 <Target className="mx-auto h-5 w-5 text-primary" />
-                <p className="text-xs text-muted-foreground">
-                  {t("targetMuscles")}
-                </p>
-                <p className="truncate font-display text-sm font-semibold text-foreground">
-                  {analysis?.muscles?.length ?? "-"}
+                <p className="text-xs text-muted-foreground">{t('targetMuscles')}</p>
+                <p className="font-display text-sm font-semibold text-foreground">
+                  {analysis?.muscles?.length ?? '-'}
                 </p>
               </div>
               <div className="glass space-y-1 rounded-xl p-4 text-center">
                 <Zap className="mx-auto h-5 w-5 text-accent" />
-                <p className="text-xs text-muted-foreground">
-                  {t("confidenceShort")}
-                </p>
+                <p className="text-xs text-muted-foreground">{t('confidenceShort')}</p>
                 <p className="font-display text-sm font-semibold text-foreground">
-                  {confidenceText ?? "-"}
+                  {confidenceText ?? '-'}
                 </p>
               </div>
             </div>
 
+            {/* Exercise GIF Gallery */}
             <div className="glass space-y-3 rounded-2xl p-5">
               <div className="flex items-center gap-2">
-                <Star className="h-4 w-4 text-primary" />
+                <Dumbbell className="h-4 w-4 text-primary" />
                 <h3 className="font-display text-sm font-semibold text-foreground">
-                  {t("aiImage")}
+                  {t('aiImage')}
                 </h3>
               </div>
-              {galleryImages.length ? (
+
+              {galleryImages.length > 0 ? (
                 <div className="space-y-3">
                   {galleryImages.map((image, idx) => (
                     <div
                       key={`${image.url}-${idx}`}
-                      className="overflow-hidden rounded-xl border border-border/60 bg-secondary/30"
+                      className="overflow-hidden rounded-xl border border-border/60 bg-secondary/50"
                     >
-                      <PreviewImage
-                        src={getUploadUrl(image.url) ?? ""}
-                        alt={image.caption || `${equipmentName} ${idx + 1}`}
-                        caption={image.caption || `${equipmentName} ${idx + 1}`}
-                        className="aspect-video w-full object-cover"
-                      />
-                      {image.caption ? (
-                        <p className="line-clamp-2 p-2 text-[11px] text-muted-foreground">
+                      <div className="relative aspect-square w-full overflow-hidden bg-muted/20">
+                        <PreviewImage
+                          src={getUploadUrl(image.url) ?? ''}
+                          alt={image.caption || `${equipmentName} ${idx + 1}`}
+                          caption={image.caption || `${equipmentName} ${idx + 1}`}
+                          className="h-full w-full object-contain"
+                        />
+                      </div>
+                      {image.caption && (
+                        <p className="line-clamp-2 p-2.5 text-[11px] font-medium text-muted-foreground border-t border-border/40">
                           {image.caption}
                         </p>
-                      ) : null}
+                      )}
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center space-y-3 rounded-2xl border border-dashed border-border bg-secondary/30 p-6 text-center transition-colors hover:bg-secondary/50">
-                  <p className="text-xs leading-relaxed text-muted-foreground max-w-[250px] mx-auto">
-                    {isGymEquipment ? t("noAiImageText") : t("notGymEquipmentNotice")}
+                <div className="flex items-center justify-center rounded-xl border border-dashed border-border bg-secondary/30 p-6 text-center">
+                  <p className="mx-auto max-w-[200px] text-xs leading-relaxed text-muted-foreground">
+                    {isGymEquipment ? t('noAiImageText') : t('notGymEquipmentNotice')}
                   </p>
-                  <Button
-                    type="button"
-                    variant="primary"
-                    onClick={handleGenerateImage}
-                    disabled={
-                      generateImageMutation.isPending || 
-                      !sessionId || 
-                      !postId || 
-                      !isGymEquipment
-                    }
-                    className="gap-2 mt-2 h-9 px-4 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    {generateImageMutation.isPending ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-4 w-4" />
-                    )}
-                    {generateImageMutation.isPending
-                      ? t("generating")
-                      : t("generateImageBtn")}
-                  </Button>
                 </div>
               )}
             </div>
           </div>
 
+          {/* ── Right column ─────────────────────────────────────────────────── */}
           <div className="space-y-6 lg:col-span-3">
+
+            {/* Description */}
             <div className="glass space-y-4 rounded-2xl p-6">
               <div className="flex items-center gap-2">
                 <Info className="h-4 w-4 text-primary" />
                 <h2 className="font-display text-lg font-semibold text-foreground">
-                  {t("description")}
+                  {t('description')}
                 </h2>
               </div>
               {sessionQuery.isPending ? (
-                <p className="text-sm leading-relaxed text-muted-foreground">
-                  {t("loading")}
-                </p>
+                <p className="text-sm leading-relaxed text-muted-foreground">{t('loading')}</p>
               ) : sessionQuery.isError ? (
                 <p className="text-sm leading-relaxed text-destructive">
                   {getApiErrorMessage(sessionQuery.error)}
                 </p>
               ) : analysis ? (
                 <p className="text-sm leading-relaxed text-muted-foreground">
-                  {t("detectedEquipment", { name: analysis.equipment.name })}
+                  {t('detectedEquipment', { name: analysis.equipment.name })}
                 </p>
               ) : (
                 <p className="text-sm leading-relaxed text-muted-foreground">
-                  {t("openFromDashboard")}
+                  {t('openFromDashboard')}
                 </p>
               )}
             </div>
 
+            {/* How to use */}
             {analysis?.usage?.steps?.length ? (
               <div className="glass space-y-4 rounded-2xl p-6">
                 <div className="flex items-center gap-2">
                   <BookOpen className="h-4 w-4 text-primary" />
                   <h2 className="font-display text-lg font-semibold text-foreground">
-                    {t("howToUse")}
+                    {t('howToUse')}
                   </h2>
                 </div>
                 <div className="space-y-2">
@@ -334,12 +286,13 @@ export function AnalysisResultPage() {
               </div>
             ) : null}
 
+            {/* Target muscles */}
             {analysis?.muscles?.length ? (
               <div className="glass space-y-5 rounded-2xl p-6">
                 <div className="flex items-center gap-2">
                   <Target className="h-4 w-4 text-primary" />
                   <h2 className="font-display text-lg font-semibold text-foreground">
-                    {t("targetMuscles")}
+                    {t('targetMuscles')}
                   </h2>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -355,22 +308,21 @@ export function AnalysisResultPage() {
               </div>
             ) : null}
 
+            {/* Cues & Mistakes */}
             <div className="grid gap-4 md:grid-cols-2">
               {analysis?.usage?.cues?.length ? (
                 <div className="glass space-y-4 rounded-2xl p-6">
                   <div className="flex items-center gap-2">
                     <Star className="h-4 w-4 text-primary" />
                     <h2 className="font-display text-lg font-semibold text-foreground">
-                      {t("cuesTitle")}
+                      {t('cuesTitle')}
                     </h2>
                   </div>
                   <ul className="space-y-2">
                     {analysis.usage.cues.map((x, i) => (
                       <li key={i} className="flex items-start gap-3">
                         <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                        <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                          {x}
-                        </p>
+                        <p className="text-sm text-muted-foreground whitespace-pre-wrap">{x}</p>
                       </li>
                     ))}
                   </ul>
@@ -382,16 +334,14 @@ export function AnalysisResultPage() {
                   <div className="flex items-center gap-2">
                     <AlertTriangle className="h-4 w-4 text-primary" />
                     <h2 className="font-display text-lg font-semibold text-foreground">
-                      {t("mistakesTitle")}
+                      {t('mistakesTitle')}
                     </h2>
                   </div>
                   <ul className="space-y-2">
                     {analysis.usage.commonMistakes.map((x, i) => (
                       <li key={i} className="flex items-start gap-3">
                         <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                        <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                          {x}
-                        </p>
+                        <p className="text-sm text-muted-foreground whitespace-pre-wrap">{x}</p>
                       </li>
                     ))}
                   </ul>
@@ -399,21 +349,20 @@ export function AnalysisResultPage() {
               ) : null}
             </div>
 
+            {/* Tips */}
             {analysis?.tips?.length ? (
               <div className="glass space-y-4 rounded-2xl p-6">
                 <div className="flex items-center gap-2">
                   <Star className="h-4 w-4 text-primary" />
                   <h2 className="font-display text-lg font-semibold text-foreground">
-                    {t("tips")}
+                    {t('tips')}
                   </h2>
                 </div>
                 <ul className="space-y-2">
                   {analysis.tips.map((tip, i) => (
                     <li key={i} className="flex items-start gap-3">
                       <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                      <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                        {tip}
-                      </p>
+                      <p className="text-sm text-muted-foreground whitespace-pre-wrap">{tip}</p>
                     </li>
                   ))}
                 </ul>
@@ -424,7 +373,7 @@ export function AnalysisResultPage() {
               href="/dashboard"
               className="flex w-full items-center justify-center gap-2 rounded-xl border border-border py-4 font-display font-semibold text-foreground transition-colors hover:bg-secondary"
             >
-              {t("newAnalysis")}
+              {t('newAnalysis')}
               <ChevronRight className="h-4 w-4" />
             </Link>
           </div>

@@ -39,6 +39,7 @@ export function PreviewImage({
         src={src}
         alt={alt}
         className={cn(className, previewEnabled && "cursor-zoom-in")}
+        style={{ imageRendering: "-webkit-optimize-contrast" }}
         onClick={previewEnabled ? () => setOpen(true) : undefined}
       />
 

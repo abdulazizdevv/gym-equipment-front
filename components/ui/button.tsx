@@ -4,8 +4,8 @@ import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
-type ButtonVariant = "primary" | "outline" | "secondary";
-type ButtonSize = "md" | "lg";
+type ButtonVariant = "primary" | "outline" | "secondary" | "ghost";
+type ButtonSize = "md" | "lg" | "icon";
 
 export type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: ButtonVariant;
@@ -22,11 +22,14 @@ const buttonVariants: Record<ButtonVariant, string> = {
     "border border-border bg-transparent text-foreground hover:bg-secondary/60 focus:outline-none focus:ring-2 focus:ring-primary/20",
   secondary:
     "bg-secondary text-foreground hover:bg-secondary/70 border border-border/60 focus:outline-none focus:ring-2 focus:ring-primary/20",
+  ghost:
+    "bg-transparent text-muted-foreground hover:text-foreground hover:bg-secondary/40 focus:outline-none",
 };
 
 const buttonSizes: Record<ButtonSize, string> = {
   md: "h-11 px-4 py-0 text-sm font-semibold",
   lg: "h-11 px-6 py-0 text-base font-semibold",
+  icon: "h-9 w-9 p-0",
 };
 
 export function Button({ className, variant = "primary", size = "md", type = "button", ...props }: ButtonProps) {
